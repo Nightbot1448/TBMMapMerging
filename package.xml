@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<package>
+  <name>slam_constructor</name>
+  <version>0.9.1</version>
+  <description>
+    The package provides implementation of several 2D laser-based simultaneous
+    localization and mapping (SLAM) algorithms (tinySLAM, vinySLAM, GMapping)
+    created with the SLAM constructor framework. The framework provides common
+    SLAM components that may help to develop custom SLAM algorithms and can be
+    accessed by provided links.
+  </description>
+  <maintainer email="ros@osll.ru">OSLL</maintainer>
+  <author>OSLL team</author>
+  <license>MIT</license>
+  <url type="repository">https://github.com/OSLL/slam-constructor</url>
+
+  <!-- Url tags are optional, but mutiple are allowed, one per tag -->
+  <!-- Optional attribute type can be: website, bugtracker, or repository -->
+  <!-- Example: -->
+  <!-- <url type="website">http://wiki.ros.org/slam_constructor</url> -->
+
+  <!-- Author tags are optional, mutiple are allowed, one per tag -->
+  <!-- Authors do not have to be maintianers, but could be -->
+  <!-- Example: -->
+  <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>message_filters</build_depend>
+  <build_depend>rosbag_storage</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>message_filters</run_depend>
+  <run_depend>rosbag_storage</run_depend>
+
+  <test_depend>gtest</test_depend>
+
+</package>

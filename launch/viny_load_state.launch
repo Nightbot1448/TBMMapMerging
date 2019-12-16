@@ -1,0 +1,21 @@
+<launch>
+    <machine name="local" address="localhost" default="true" />
+
+<!--    <param name="use_sim_time" value="true"/>-->
+<!--    <arg name="rate" default="1.0" />-->
+
+    <arg name="node_start_delay" default="5.0" />
+
+
+    <node name="rviz" pkg="rviz" type="rviz" respawn="true"
+      args="-d $(find slam_constructor)/rviz/debug.rviz" />
+
+    <node name="rviz0" pkg="rviz" type="rviz" respawn="true"
+          args="-d $(find slam_constructor)/rviz/debug0.rviz" />
+          
+    <node name="rviz1" pkg="rviz" type="rviz" respawn="true"
+          args="-d $(find slam_constructor)/rviz/debug1.rviz" />
+
+    <node pkg="slam_constructor" type="load_map_ff" name="load_map_ff" output="screen"
+          launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "/>
+</launch>

@@ -1,0 +1,59 @@
+<launch>
+  <machine name="local" address="localhost" default="true" />
+
+  <param name="use_sim_time" value="true"/>
+  <arg name="rate" default="1.0" />
+
+  <node name="gMappingSlam" pkg="slam_constructor" type="gmapping"
+        cwd="node" required="true" output="screen">
+
+    <!-- Map setup-->
+    <param name="slam/map/height_in_meters" value="128" />
+    <param name="slam/map/width_in_meters" value="128" />
+    <param name="slam/map/meters_per_cell" value="0.05" />
+
+    <!-- Internal constants for ros-->
+    <param name="ros/tf/buffer_duration" value="5.0" /> <!-- in seconds-->
+    <param name="ros/filter_queue_size" value="10" />
+    <param name="ros/subscribers_queue_size" value="10" />
+
+    <!-- Params for particles init/sample stohastic strategy -->
+    <param name="slam/particles/number" value="20" />
+    <param name = "slam/particles/sample/xy/mean" value = "0.0" />
+    <param name = "slam/particles/sample/xy/sigma" value = "0.1" />
+    <param name = "slam/particles/sample/theta/mean" value = "0.0" />
+    <param name = "slam/particles/sample/theta/sigma" value = "0.03" />
+    <param name = "slam/particles/sm_delta_lim/xy/min" value = "0.6" />
+    <param name = "slam/particles/sm_delta_lim/xy/max" value = "0.8" />
+    <param name = "slam/particles/sm_delta_lim/theta/min" value = "0.3" />
+    <param name = "slam/particles/sm_delta_lim/theta/max" value = "0.4" />
+
+    <!-- = Localization = -->
+    <param name="slam/scmtch/spe/type" value="wmpp" />
+    <param name="slam/scmtch/spe/wmpp/weighting/type" value="even" />
+    <param name="slam/scmtch/spe/wmpp/sp_skip_rate" value="3" />
+    <param name="slam/scmtch/oope/type" value="custom" />
+    <param name="slam/scmtch/oope/custom/fullness_threshold" value="0.1" />
+    <param name="slam/scmtch/oope/custom/window_size" value="1" />
+
+    <!-- = Input = -->
+    <param name="in/lscan2D/ros/topic/name" value="/base_scan" />
+    <param name="in/lscan2D/skip_exceeding_vals" value="true" />
+    <param name="in/odometry/ros/tf/odom_frame_id" value="odom_combined" />
+
+    <!-- = Output = -->
+    <param name="ros/tf/async_correction" value="true" />
+    <param name="ros/rviz/map_publishing_rate" value="5.0" />
+
+    <!-- = Mapping = -->
+    <param name="slam/mapping/blur" value="0.0" /> <!-- meters -->
+    <param name="slam/mapping/max_range" value="60.0" /> <!-- meters -->
+  </node>
+
+  <node name="player" pkg="rosbag" type="play"
+        args="--delay=3 --clock --rate $(arg rate) $(arg path)" />
+
+  <node name="rviz" pkg="rviz" type="rviz" respawn="true"
+        args="-d $(find slam_constructor)/rviz/debug.rviz" />
+
+</launch>
