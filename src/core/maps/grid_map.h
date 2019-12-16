@@ -39,6 +39,9 @@ public:
   // NB: use update/reset to modify cells instead of operator[]
   //     to prevent proxies usage in descendants that are interested in
   //     modifications.
+
+  void save_state_to_file(const std::string& _base_fname = "/home/dmo/Documents/diplom/dumps/tmp_") const{}
+
   void update(const Coord &area_id,
               const AreaOccupancyObservation &aoo) override {
     auto const_this = static_cast<const decltype(this)>(this);

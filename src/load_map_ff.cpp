@@ -26,7 +26,6 @@ int main(int  argc, char **argv) {
     UnboundedPlainGridMap map_1 = UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp);
     std::ifstream in("/home/dmo/Documents/diplom/dumps/compressed_dump_8.txt");
     std::ifstream in1("/home/dmo/Documents/diplom/dumps/compressed_dump_0.txt");
-    // std::ifstream in1("/home/dmo/Documents/diplom/dumps/merged_test0.txt");
     
     std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
                                    std::istreambuf_iterator<char>());
