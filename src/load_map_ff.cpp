@@ -2,10 +2,12 @@
 #include <fstream>
 #include <iterator>
 
-#include "ros/occupancy_grid_publisher.h"
-#include "ros/init_utils.h"
+// #include "ros/occupancy_grid_publisher.h"
+// #include <ros/ros.h>
+// #include "ros/init_utils.h"
+#include <nav_msgs/OccupancyGrid.h>
 
-#include "core/maps/grid_map.h"
+// #include "core/maps/grid_map.h"
 #include "core/maps/plain_grid_map.h"
 #include "slams/viny/viny_grid_cell.h"
 
