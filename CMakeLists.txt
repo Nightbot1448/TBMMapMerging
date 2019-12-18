@@ -13,12 +13,12 @@ endif()
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
-  sensor_msgs
+  # sensor_msgs
   nav_msgs
-  geometry_msgs
-  tf
-  message_filters
-  rosbag_storage
+  # geometry_msgs
+  # tf
+  # message_filters
+  # rosbag_storage
 )
 
 include_directories(
@@ -29,6 +29,7 @@ catkin_package()
 
 
 add_executable(load_map_ff src/load_map_ff.cpp)
+# add_executable(load_map_ff src/load_map_ff.cpp)
 # add_executable(wg_pr2_bag_adapter src/ros/wg_pr2_bag_adapter.cpp)
 # add_executable(lslam2D_bag_runner src/ros/lslam2D_bag_runner.cpp)
 # add_executable(gmapping src/slams/gmapping/gmapping.cpp)

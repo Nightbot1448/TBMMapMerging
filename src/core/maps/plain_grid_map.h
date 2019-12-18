@@ -11,7 +11,7 @@
 #include <iostream>
 
 #include "grid_map.h"
-//#include "../../slams/viny/viny_grid_cell.h"
+#include "../../slams/viny/viny_grid_cell.h"
 
 
 
