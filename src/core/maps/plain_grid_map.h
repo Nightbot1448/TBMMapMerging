@@ -54,6 +54,15 @@ public: // methods
 												const GridMapParams &params = MapValues::gmp)
 		: PlainGridMap{prototype, params}
 			, _origin{GridMap::origin()}, _unknown_cell{prototype->clone()} {}
+
+	void clone_other_map_properties(const UnboundedPlainGridMap &other){
+		set_width(other.width());
+		set_height(other.height());
+		set_scale(other.scale());
+		// _origin = other._origin;
+		// _unknown_cell = other.new_cell();
+	}
+
 	void update(const Coord &area_id,
 							const AreaOccupancyObservation &aoo) override {
 		ensure_inside(area_id);

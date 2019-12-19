@@ -2,19 +2,15 @@
     <machine name="local" address="localhost" default="true" />
 
       <arg name="node_start_delay" default="5.0" />
+      <arg name="file" default="/home/dmo/Documents/diplom/dumps/tmp_0.txt" />
 
-      <node name="rviz_first_map" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug.rviz" />
-
-      <node name="rviz_second_map" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug0.rviz" />
-          
-      <node name="rviz_conj" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug1.rviz" />
-          
-      <node name="rviz_conj" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug2.rviz" />
+      <!-- <node name="rviz_first_map" pkg="rviz" type="rviz" respawn="true"
+            args="-d $(find slam_constructor)/rviz/debug.rviz" /> -->
 
       <node pkg="slam_constructor" type="load_map_ff" name="load_map_ff" output="screen"
-          launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "/>
+          >
+          <!-- launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' " -->
+          <param name="file_name_to_load" value="$(arg file)"/>
+      </node>
+
 </launch>

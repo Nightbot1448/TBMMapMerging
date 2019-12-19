@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   # tf
   # message_filters
   # rosbag_storage
+  roslz4
 )
 
 include_directories(
@@ -29,7 +30,8 @@ catkin_package()
 
 
 add_executable(load_map_ff src/load_map_ff.cpp)
-# add_executable(load_map_ff src/load_map_ff.cpp)
+add_executable(conj_and_disj src/conj_and_disj.cpp)
+
 # add_executable(wg_pr2_bag_adapter src/ros/wg_pr2_bag_adapter.cpp)
 # add_executable(lslam2D_bag_runner src/ros/lslam2D_bag_runner.cpp)
 # add_executable(gmapping src/slams/gmapping/gmapping.cpp)
@@ -43,6 +45,7 @@ add_executable(load_map_ff src/load_map_ff.cpp)
 
 
 target_link_libraries(load_map_ff ${catkin_LIBRARIES})
+target_link_libraries(conj_and_disj ${catkin_LIBRARIES})
 # target_link_libraries(wg_pr2_bag_adapter ${catkin_LIBRARIES})
 # target_link_libraries(lslam2D_bag_runner ${catkin_LIBRARIES})
 # target_link_libraries(gmapping ${catkin_LIBRARIES})

@@ -2,6 +2,6 @@
 build
 docs/doxygen
 .vscode
-rviz/debug0.rviz
-rviz/debug1.rviz
-rviz/debug2.rviz
+rviz/debug_second_map.rviz
+rviz/debug_conj.rviz
+rviz/debug_disj.rviz
