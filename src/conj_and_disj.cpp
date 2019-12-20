@@ -10,7 +10,7 @@
 #include <typeinfo>
 
 int main(int  argc, char **argv) {
-    ros::init(argc, argv, "load_map_ff");
+    ros::init(argc, argv, "conj_and_disj");
 
     ros::NodeHandle nh;
     ros::Publisher pub =            nh.advertise<nav_msgs::OccupancyGrid>("map", 5);
@@ -27,8 +27,14 @@ int main(int  argc, char **argv) {
     map_conj.clone_other_map_properties(map);
     map_disj.clone_other_map_properties(map);
 
-    std::ifstream in("/home/dmo/Documents/diplom/dumps/compressed_dump_8.txt");
-    std::ifstream in_second("/home/dmo/Documents/diplom/dumps/compressed_dump_0.txt");
+    std::string first_file("/home/dmo/Documents/diplom/dumps/compressed_dump_8.txt");
+    std::string second_file("/home/dmo/Documents/diplom/dumps/compressed_dump_0.txt");
+
+    nh.getParam("/conj_and_disj/first_file", first_file);
+    nh.getParam("/conj_and_disj/second_file", second_file);
+
+    std::ifstream in(first_file);
+    std::ifstream in_second(second_file);
     
     std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
                                    std::istreambuf_iterator<char>());
@@ -56,11 +62,11 @@ int main(int  argc, char **argv) {
     DiscretePoint2D end_of_map = DiscretePoint2D(info.width,
                                                  info.height) - origin;
     
-    DiscretePoint2D zero;
-    std::cout << -origin <<std::endl;
-    std::cout << end_of_map <<std::endl;
-    std::cout << zero <<std::endl;
-    std::cout << "{" << info.width << ',' << info.height << '}' << std::endl;
+    // DiscretePoint2D zero;
+    // std::cout << -origin <<std::endl;
+    // std::cout << end_of_map <<std::endl;
+    // std::cout << zero <<std::endl;
+    // std::cout << "{" << info.width << ',' << info.height << '}' << std::endl;
     
     nav_msgs::OccupancyGrid map_msg_second(map_msg);
     nav_msgs::OccupancyGrid map_msg_conj(map_msg);
@@ -69,6 +75,7 @@ int main(int  argc, char **argv) {
 
     for (pnt.y = -origin.y; pnt.y < end_of_map.y; ++pnt.y) {
         for (pnt.x = -origin.x; pnt.x < end_of_map.x; ++pnt.x) {
+            
             double value = static_cast<double>(map[pnt]);
             int cell_value = value == -1 ? -1 : static_cast<int>(value * 100);
             map_msg.data.push_back(cell_value);
@@ -82,16 +89,12 @@ int main(int  argc, char **argv) {
             TBM res_conj = conjunctive(el0,el1);
             TBM res_disj = disjunctive(el0,el1);
 
-            // if(res_conj != el0 && res_conj != el1 )
-            // {
-            //     std::cout << pnt << "; " << el0 << ", " << el1 << ", " << res_conj << std::endl;
-            // }
 
             Occupancy o_conj = TBM_to_O(res_conj);
             Occupancy o_disj = TBM_to_O(res_disj);
 
-            map_conj.setCell(pnt, VinyDSCell(o_conj, res_conj));
-            map_disj.setCell(pnt, VinyDSCell(o_disj, res_disj));
+            map_conj.setCell(pnt, new VinyDSCell(o_conj, res_conj));
+            map_disj.setCell(pnt, new VinyDSCell(o_disj, res_disj));
 
             value = static_cast<double>(o_conj);
             cell_value = value == -1 ? -1 : static_cast<int>(value * 100);
@@ -104,8 +107,8 @@ int main(int  argc, char **argv) {
         }
     }
 
-    map_conj.save_state_to_file();
-    map_disj.save_state_to_file();
+    map_conj.save_state_to_file("/home/dmo/Documents/diplom/dumps/conj.txt");
+    map_disj.save_state_to_file("/home/dmo/Documents/diplom/dumps/disj.txt");
 
     pub.publish(map_msg);
     ros::spinOnce();

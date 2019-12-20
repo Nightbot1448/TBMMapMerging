@@ -29,7 +29,8 @@ include_directories(
 catkin_package()
 
 
-add_executable(load_map_ff src/load_map_ff.cpp)
+add_executable(load_state src/load_state.cpp)
+add_executable(map_translation src/map_translation.cpp)
 add_executable(conj_and_disj src/conj_and_disj.cpp)
 
 # add_executable(wg_pr2_bag_adapter src/ros/wg_pr2_bag_adapter.cpp)
@@ -44,7 +45,8 @@ add_executable(conj_and_disj src/conj_and_disj.cpp)
 # add_executable(p2D_ss_evaluator src/utils/pose2D_search_space_evaluator.cpp)
 
 
-target_link_libraries(load_map_ff ${catkin_LIBRARIES})
+target_link_libraries(load_state ${catkin_LIBRARIES})
+target_link_libraries(map_translation ${catkin_LIBRARIES})
 target_link_libraries(conj_and_disj ${catkin_LIBRARIES})
 # target_link_libraries(wg_pr2_bag_adapter ${catkin_LIBRARIES})
 # target_link_libraries(lslam2D_bag_runner ${catkin_LIBRARIES})
@@ -58,7 +60,7 @@ target_link_libraries(conj_and_disj ${catkin_LIBRARIES})
 
 install(
   TARGETS #wg_pr2_bag_adapter lslam2D_bag_runner gmapping tiny_slam viny_slam credibilist_slam path_publisher viny_slam
-  load_map_ff 
+  load_state 
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

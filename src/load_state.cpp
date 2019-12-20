@@ -10,15 +10,15 @@
 #include <typeinfo>
 
 int main(int  argc, char **argv) {
-    ros::init(argc, argv, "load_map_ff");
+    ros::init(argc, argv, "load_state");
 
     ros::NodeHandle nh;
     ros::Publisher pub = nh.advertise<nav_msgs::OccupancyGrid>("map", 5);
     std::string tf_frame = "odom_combined";
     auto gmp = MapValues::gmp;
 
-    std::string filename_ = "/home/dmo/Documents/diplom/dumps/tmp_0.txt";
-    nh.getParam("/load_map_ff/file_name_to_load", filename_);
+    std::string filename_ = "/home/dmo/Documents/diplom/dumps/compressed_dump_8.txt";
+    nh.getParam("/load_state/file", filename_);
 
     UnboundedPlainGridMap map = UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp);
     
@@ -28,10 +28,8 @@ int main(int  argc, char **argv) {
     
     std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
                                    std::istreambuf_iterator<char>());
-    
-    
-    map.load_state(file_content);
 
+    map.load_state(file_content);
 
     nav_msgs::OccupancyGrid map_msg;
     map_msg.header.frame_id = tf_frame;
@@ -67,6 +65,7 @@ int main(int  argc, char **argv) {
 
     pub.publish(map_msg);
     ros::spinOnce();
+    ROS_INFO("published");
     // rviz перестал подхватывать сообщение, хз почему
     // pub.publish(map_msg);
     // ros::spinOnce();

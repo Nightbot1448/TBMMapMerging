@@ -63,16 +63,18 @@ public: // methods
 		// _unknown_cell = other.new_cell();
 	}
 
-	void update(const Coord &area_id,
-							const AreaOccupancyObservation &aoo) override {
+	void update(const Coord &area_id, const AreaOccupancyObservation &aoo) override {
 		ensure_inside(area_id);
 		PlainGridMap::update(area_id, aoo);
 	}
 
-	void setCell(const Coord &area_id, const GridCell &cell){
+	// void setCell(const Coord &area_id, const GridCell &cell){
+	void setCell(const Coord &area_id, GridCell *cell){
 		ensure_inside(area_id);
 		auto ic = external2internal(area_id);
-		*(_cells[ic.y][ic.x]) = cell;
+		// *(_cells[ic.y][ic.x]) = cell;
+		_cells[ic.y][ic.x].release();
+		_cells[ic.y][ic.x].reset(cell);
 	}
 
 	void reset(const Coord &area_id, const GridCell &new_area) {
@@ -134,7 +136,12 @@ public: // methods
 #endif
 		static size_t _id = 0;
 		ROS_INFO("save %lu dump", _id);
-		std::ofstream dst = std::ofstream{_base_fname + std::to_string(_id) + ".txt", std::ios::out};
+		std::string res_name;
+		if (_base_fname == "/home/dmo/Documents/diplom/dumps/tmp_")
+			res_name = _base_fname + std::to_string(_id) + ".txt";
+		else
+			res_name = _base_fname;
+		std::ofstream dst = std::ofstream{res_name, std::ios::out};
 		std::vector<char> result = s.result();
 		dst.write(result.data(), result.size() * sizeof(*(result.data())));
 		dst.close();
