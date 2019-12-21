@@ -4,12 +4,9 @@
 
 #include <nav_msgs/OccupancyGrid.h>
 
-#include "core/maps/plain_grid_map.h"
-#include "slams/viny/viny_grid_cell.h"
+#include "../core/maps/plain_grid_map.h"
+#include "../slams/viny/viny_grid_cell.h"
 
-
-#include <typeinfo>
-#include <iomanip>
 
 
 int main(int  argc, char **argv) {
@@ -40,11 +37,8 @@ int main(int  argc, char **argv) {
     std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
                                    std::istreambuf_iterator<char>());
     
-
     map.load_state(file_content);
     
-
-
     UnboundedPlainGridMap map_second = UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp);
     map_second.clone_other_map_properties(map);
 

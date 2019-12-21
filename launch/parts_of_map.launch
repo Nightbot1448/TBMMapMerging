@@ -1,0 +1,28 @@
+<launch>
+    <machine name="local" address="localhost" default="true" />
+
+      <arg name="node_start_delay" default="5.0" />
+      <arg name="input_file" default="/home/dmo/Documents/diplom/dumps/compressed_dump_8.txt" />
+      <arg name="first_output_file" default="/home/dmo/Documents/diplom/dumps/map_8_part_1.txt" />
+      <arg name="second_output_file" default="/home/dmo/Documents/diplom/dumps/map_8_part_2.txt" />
+      <arg name="is_horizontal" default="true" />
+      <arg name="percent" default="60" />
+
+      <node name="rviz_first_map" pkg="rviz" type="rviz" respawn="true"
+            args="-d $(find slam_constructor)/rviz/debug.rviz" />
+
+      <node name="rviz_map_part_1" pkg="rviz" type="rviz" respawn="true"
+            args="-d $(find slam_constructor)/rviz/debug_second_map.rviz" />
+      
+      <node name="rviz_map_part_2" pkg="rviz" type="rviz" respawn="true"
+            args="-d $(find slam_constructor)/rviz/debug_conj.rviz" />
+     
+      <node pkg="slam_constructor" type="parts_of_map" name="parts_of_map" output="screen"
+          launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
+            <param name="input_file" value="$(arg input_file)"/>
+            <param name="first_output_file" value="$(arg first_output_file)"/>
+            <param name="second_output_file" value="$(arg second_output_file)"/>
+            <param name="is_horizontal" value="$(arg is_horizontal)"/>
+            <param name="percent" value="$(arg percent)"/>
+        </node>
+</launch>

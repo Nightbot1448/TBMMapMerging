@@ -4,7 +4,6 @@
       <arg name="node_start_delay" default="6.0" />
       <arg name="first_file" default="/home/dmo/Documents/diplom/dumps/compressed_dump_8.txt" />
       <arg name="second_file" default="/home/dmo/Documents/diplom/dumps/shifted_map_8.txt" />
-      <!-- /home/dmo/Documents/diplom/dumps/shifted_map_8.txt -->
 
       <node name="rviz_first_map" pkg="rviz" type="rviz" respawn="true"
             args="-d $(find slam_constructor)/rviz/debug.rviz" />

@@ -29,9 +29,10 @@ include_directories(
 catkin_package()
 
 
-add_executable(load_state src/load_state.cpp)
-add_executable(map_translation src/map_translation.cpp)
-add_executable(conj_and_disj src/conj_and_disj.cpp)
+add_executable(load_state src/map_utils/load_state.cpp)
+add_executable(map_translation src/map_utils/map_translation.cpp)
+add_executable(parts_of_map src/map_utils/parts_of_map.cpp)
+add_executable(conj_and_disj src/map_utils/conj_and_disj.cpp)
 
 # add_executable(wg_pr2_bag_adapter src/ros/wg_pr2_bag_adapter.cpp)
 # add_executable(lslam2D_bag_runner src/ros/lslam2D_bag_runner.cpp)
@@ -47,6 +48,7 @@ add_executable(conj_and_disj src/conj_and_disj.cpp)
 
 target_link_libraries(load_state ${catkin_LIBRARIES})
 target_link_libraries(map_translation ${catkin_LIBRARIES})
+target_link_libraries(parts_of_map ${catkin_LIBRARIES})
 target_link_libraries(conj_and_disj ${catkin_LIBRARIES})
 # target_link_libraries(wg_pr2_bag_adapter ${catkin_LIBRARIES})
 # target_link_libraries(lslam2D_bag_runner ${catkin_LIBRARIES})
