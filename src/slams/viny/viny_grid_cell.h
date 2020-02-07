@@ -16,7 +16,11 @@ public:
   VinyDSCell(VinyDSCell&& gc) = default;
   VinyDSCell& operator=(VinyDSCell&& gc) = default;
 
-  std::unique_ptr<GridCell> clone() const override {
+  // std::unique_ptr<VinyDSCell> clone() const override {
+  //   return std::make_unique<VinyDSCell>(*this);
+  // }
+
+  std::unique_ptr<VinyDSCell> clone_viny() const {
     return std::make_unique<VinyDSCell>(*this);
   }
 

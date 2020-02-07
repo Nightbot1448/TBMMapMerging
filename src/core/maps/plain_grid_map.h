@@ -6,6 +6,7 @@
 #include <memory>
 #include <cassert>
 #include <algorithm>
+#include <array>
 
 #include <typeinfo>
 #include <iostream>
@@ -13,23 +14,25 @@
 #include "grid_map.h"
 #include "../../slams/viny/viny_grid_cell.h"
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
 
 
 class PlainGridMap : public GridMap {
 public:
 	// TODO: cp, mv ctors, dtor
-	PlainGridMap(std::shared_ptr<GridCell> prototype,
+	PlainGridMap(std::shared_ptr<VinyDSCell> prototype,
 							 const GridMapParams& params = MapValues::gmp)
 		: GridMap{prototype, params}, _cells(GridMap::height()) {
 		for (auto &row : _cells) {
 			row.reserve(GridMap::width());
 			for (int i = 0; i < GridMap::width(); i++) {
-					row.push_back(prototype->clone());
+					row.push_back(prototype->clone_viny());
 			}
 		}
 	}
 
-	const GridCell &operator[](const Coord& c) const override {
+	const VinyDSCell &operator[](const Coord& c) const override {
 		auto coord = external2internal(c);
 		assert(has_internal_cell(coord));
 		return cell_internal(coord);
@@ -37,11 +40,11 @@ public:
 
 protected: // fields
 
-	const GridCell& cell_internal(const Coord& ic) const {
+	const VinyDSCell& cell_internal(const Coord& ic) const {
 		return *_cells[ic.y][ic.x];
 	}
 
-	std::vector<std::vector<std::unique_ptr<GridCell>>> _cells;
+	std::vector<std::vector<std::unique_ptr<VinyDSCell>>> _cells;
 };
 
 /* Unbounded implementation */
@@ -50,10 +53,10 @@ class UnboundedPlainGridMap : public PlainGridMap {
 private: // fields
 	static constexpr double Expansion_Rate = 1.2;
 public: // methods
-	UnboundedPlainGridMap(std::shared_ptr<GridCell> prototype,
+	UnboundedPlainGridMap(std::shared_ptr<VinyDSCell> prototype,
 												const GridMapParams &params = MapValues::gmp)
 		: PlainGridMap{prototype, params}
-			, _origin{GridMap::origin()}, _unknown_cell{prototype->clone()} {}
+			, _origin{GridMap::origin()}, _unknown_cell{prototype->clone_viny()} {}
 
 	void clone_other_map_properties(const UnboundedPlainGridMap &other){
 		set_width(other.width());
@@ -68,8 +71,8 @@ public: // methods
 		PlainGridMap::update(area_id, aoo);
 	}
 
-	// void setCell(const Coord &area_id, const GridCell &cell){
-	void setCell(const Coord &area_id, GridCell *cell){
+	// void setCell(const Coord &area_id, const VinyDSCell &cell){
+	void setCell(const Coord &area_id, VinyDSCell *cell){
 		ensure_inside(area_id);
 		auto ic = external2internal(area_id);
 		// *(_cells[ic.y][ic.x]) = cell;
@@ -77,14 +80,14 @@ public: // methods
 		_cells[ic.y][ic.x].reset(cell);
 	}
 
-	void reset(const Coord &area_id, const GridCell &new_area) {
+	void reset(const Coord &area_id, const VinyDSCell &new_area) {
 		ensure_inside(area_id);
 		auto ic = external2internal(area_id);
-			_cells[ic.y][ic.x].reset(new_area.clone().release());
+			_cells[ic.y][ic.x].reset(new_area.clone_viny().release());
 		//PlainGridMap::reset(area_id, new_area);
 	}
 
-	const GridCell &operator[](const Coord& ec) const override {
+	const VinyDSCell &operator[](const Coord& ec) const override {
 		auto ic = external2internal(ec);
 		if (!PlainGridMap::has_internal_cell(ic)) { return *_unknown_cell; }
 		return PlainGridMap::cell_internal(ic);
@@ -115,6 +118,44 @@ public: // methods
 		return s.result();
 	}
 
+	virtual cv::Mat convert_to_grayscale_img() const {
+		int w = width();
+		int h = height();
+		auto origin_ = origin();
+		cv::Mat_<uchar> map_img(w,h);
+		for(int i=0; i<h; i++){
+			for(int j=0; j<w; j++){
+				map_img(h-i-1,j) = static_cast<uchar>((1 - operator[](Coord(j-origin_.x, i-origin_.y)).occupancy().prob_occ) * 255);
+			}   
+		}
+		return map_img;
+	}
+
+	virtual std::array<cv::Mat, 3> get_3_maps() const {
+		int w = width();
+		int h = height();
+		auto origin_ = origin();
+		int inv_start = 300, inv_before_end = 200; 
+		cv::Mat_<uchar> occ_map(h-inv_start-inv_before_end,w);
+		cv::Mat_<uchar> emp_map(h-inv_start-inv_before_end,w);
+		cv::Mat_<uchar> unk_map(h-inv_start-inv_before_end,w);
+		
+		for(int i=inv_start; i<h-inv_before_end; i++){
+			for(int j=0; j<w; j++){
+				auto cell_belief = operator[](Coord(j-origin_.x, i-origin_.y)).belief();
+				occ_map(h - i - inv_before_end - 1, j) = static_cast<uchar>(cell_belief.occupied() * 255);
+				emp_map(h - i - inv_before_end - 1, j) = static_cast<uchar>(cell_belief.empty() * 255);
+				unk_map(h - i - inv_before_end - 1, j) = static_cast<uchar>(cell_belief.unknown() * 255);
+			}
+		}
+		
+		std::array<cv::Mat, 3> result;
+		result.at(0) = occ_map;
+		result.at(1) = emp_map;
+		result.at(2) = unk_map;
+		return result;
+	}
+
 	void save_state_to_file(const std::string& _base_fname = "/home/dmo/Documents/diplom/dumps/tmp_") const /*override??*/ {
 		auto w = width(), h = height();
 		size_t map_size_bytes = w * h * _unknown_cell->serialize().size() * sizeof(char);
@@ -135,7 +176,7 @@ public: // methods
 		s.append(ms.result());
 #endif
 		static size_t _id = 0;
-		ROS_INFO("save %lu dump", _id);
+		// ROS_INFO("save %lu dump", _id);
 		std::string res_name;
 		if (_base_fname == "/home/dmo/Documents/diplom/dumps/tmp_")
 			res_name = _base_fname + std::to_string(_id) + ".txt";
@@ -159,12 +200,12 @@ public: // methods
 		set_height(h);
 		set_scale(s);
 	#ifdef COMPRESSED_SERIALIZATION
-		ROS_INFO("start decompress");
+		// ROS_INFO("start decompress");
 		std::vector<char> map_data = Deserializer::decompress(
 				data.data() + d.pos(), data.size() - d.pos(),
 				w * h * _unknown_cell->serialize().size());
 		size_t pos = 0;
-		ROS_INFO("finish decompress");
+		// ROS_INFO("finish decompress");
 	#else
 		const std::vector<char> &map_data = data;
 		size_t pos = d.pos();
@@ -183,7 +224,6 @@ public: // methods
 
 protected: // methods
 
-	// КАКОГО ТУТ ПРОИСХОДИТ
 	bool ensure_inside(const Coord &c) {
 		auto coord = external2internal(c);
 		if (PlainGridMap::has_internal_cell(coord)) return false;
@@ -207,10 +247,10 @@ protected: // methods
 		#undef UPDATE_DIM
 
 		// PERFORMANCE: _cells can be reused
-		std::vector<std::vector<std::unique_ptr<GridCell>>> new_cells{new_h};
+		std::vector<std::vector<std::unique_ptr<VinyDSCell>>> new_cells{new_h};
 		for (size_t y = 0; y != new_h; ++y) {
 //        std::generate_n(std::back_inserter(new_cells[y]), new_w, [this](){ return this->_unknown_cell->clone(); });
-				std::generate_n(std::back_inserter(new_cells[y]), new_w, [this](){ return this->_unknown_cell->clone(); });
+				std::generate_n(std::back_inserter(new_cells[y]), new_w, [this](){ return this->_unknown_cell->clone_viny(); });
 			if (y < prep_y || prep_y + h <= y) { continue; }
 
 			std::move(_cells[y - prep_y].begin(), _cells[y - prep_y].end(),
@@ -240,7 +280,7 @@ protected: // methods
 
 private: // fields
 	Coord _origin;
-	std::shared_ptr<GridCell> _unknown_cell;
+	std::shared_ptr<VinyDSCell> _unknown_cell;
 };
 
 #endif

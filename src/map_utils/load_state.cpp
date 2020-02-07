@@ -4,10 +4,12 @@
 
 #include <nav_msgs/OccupancyGrid.h>
 
+#include <opencv2/highgui.hpp>
+
 #include "../core/maps/plain_grid_map.h"
 #include "../slams/viny/viny_grid_cell.h"
 
-#include <typeinfo>
+void push_to_map_msg(nav_msgs::OccupancyGrid &msg, const GridCell &cell);
 
 int main(int  argc, char **argv) {
     ros::init(argc, argv, "load_state");
@@ -31,6 +33,7 @@ int main(int  argc, char **argv) {
 
     map.load_state(file_content);
 
+
     nav_msgs::OccupancyGrid map_msg;
     map_msg.header.frame_id = tf_frame;
     map_msg.info.map_load_time = ros::Time::now();
@@ -38,12 +41,9 @@ int main(int  argc, char **argv) {
     map_msg.info.height = map.height();
     map_msg.info.resolution = map.scale();
 
-    // // move map to the middle
+    // move map to the middle
     nav_msgs::MapMetaData &info = map_msg.info;
     DiscretePoint2D origin = map.origin();
-    // info.origin.position.x = -info.resolution * origin.x;
-    // info.origin.position.y = -info.resolution * origin.y;
-    // info.origin.position.z = 0;
     map_msg.data.reserve(info.height * info.width);
     DiscretePoint2D pnt;
     DiscretePoint2D end_of_map = DiscretePoint2D(info.width,
@@ -55,21 +55,27 @@ int main(int  argc, char **argv) {
     std::cout << zero <<std::endl;
     std::cout << "{" << info.width << ',' << info.height << '}' << std::endl;
     
-    for (pnt.y = -origin.y; pnt.y < end_of_map.y; ++pnt.y) {
-        for (pnt.x = -origin.x; pnt.x < end_of_map.x; ++pnt.x) {
-            double value = static_cast<double>(map[pnt]);
-            int cell_value = value == -1 ? -1 : static_cast<int>(value * 100);
-            map_msg.data.push_back(cell_value);
-        }
+    for (pnt.y = -origin.y; pnt.y < end_of_map.y; ++pnt.y)
+        for (pnt.x = -origin.x; pnt.x < end_of_map.x; ++pnt.x)
+                push_to_map_msg(map_msg, map[pnt]);
+
+    ros::Rate loop_rate(1000);
+    cv::Mat map_img =  map.convert_to_grayscale_img();
+    
+    while(ros::ok())
+    {
+        pub.publish(map_msg);
+        cv::imshow("Map", map_img);
+        cv::waitKey(1);
+        ros::spinOnce();
+        loop_rate.sleep();
     }
 
-    pub.publish(map_msg);
-    ros::spinOnce();
-    ROS_INFO("published");
-    // rviz перестал подхватывать сообщение, хз почему
-    // pub.publish(map_msg);
-    // ros::spinOnce();
-    // ROS_INFO("SPIN");
-
     return 0;
+}
+
+void push_to_map_msg(nav_msgs::OccupancyGrid &msg, const GridCell &cell){
+    double value = static_cast<double>(cell);
+    int cell_value = value == -1 ? -1 : static_cast<int>(value * 100);
+    msg.data.push_back(cell_value);
 }

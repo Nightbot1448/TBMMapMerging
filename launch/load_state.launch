@@ -1,15 +1,14 @@
 <launch>
     <machine name="local" address="localhost" default="true" />
 
-      <arg name="node_start_delay" default="3.0" />
+      <arg name="node_start_delay" default="1.0" />
       <arg name="file" default="/home/dmo/Documents/diplom/dumps/compressed_dump_8.txt" />
-
-      <node name="rviz_first_map" pkg="rviz" type="rviz" respawn="true"
+            <!-- respawn="true" -->
+      <node name="rviz_first_map" pkg="rviz" type="rviz" 
             args="-d $(find slam_constructor)/rviz/debug.rviz" />
 
       <node pkg="slam_constructor" type="load_state" name="load_state" output="screen"
-          launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
-          >
+          launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
           <param name="file" value="$(arg file)"/>
       </node>
 

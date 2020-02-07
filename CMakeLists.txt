@@ -22,6 +22,8 @@ find_package(catkin REQUIRED COMPONENTS
   roslz4
 )
 
+find_package( OpenCV REQUIRED )
+
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
@@ -33,6 +35,7 @@ add_executable(load_state src/map_utils/load_state.cpp)
 add_executable(map_translation src/map_utils/map_translation.cpp)
 add_executable(parts_of_map src/map_utils/parts_of_map.cpp)
 add_executable(conj_and_disj src/map_utils/conj_and_disj.cpp)
+add_executable(3_maps src/map_utils/3_maps.cpp)
 
 # add_executable(wg_pr2_bag_adapter src/ros/wg_pr2_bag_adapter.cpp)
 # add_executable(lslam2D_bag_runner src/ros/lslam2D_bag_runner.cpp)
@@ -46,10 +49,12 @@ add_executable(conj_and_disj src/map_utils/conj_and_disj.cpp)
 # add_executable(p2D_ss_evaluator src/utils/pose2D_search_space_evaluator.cpp)
 
 
-target_link_libraries(load_state ${catkin_LIBRARIES})
-target_link_libraries(map_translation ${catkin_LIBRARIES})
-target_link_libraries(parts_of_map ${catkin_LIBRARIES})
-target_link_libraries(conj_and_disj ${catkin_LIBRARIES})
+target_link_libraries(load_state ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(map_translation ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(parts_of_map ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(conj_and_disj ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(3_maps ${catkin_LIBRARIES} ${OpenCV_LIBS})
+
 # target_link_libraries(wg_pr2_bag_adapter ${catkin_LIBRARIES})
 # target_link_libraries(lslam2D_bag_runner ${catkin_LIBRARIES})
 # target_link_libraries(gmapping ${catkin_LIBRARIES})
@@ -63,6 +68,7 @@ target_link_libraries(conj_and_disj ${catkin_LIBRARIES})
 install(
   TARGETS #wg_pr2_bag_adapter lslam2D_bag_runner gmapping tiny_slam viny_slam credibilist_slam path_publisher viny_slam
   load_state 
+  3_maps
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
