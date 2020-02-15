@@ -143,9 +143,10 @@ void get_mathces(_thread_info info, std::promise<_thread_return> ret){
 	detector->detectAndCompute( info.img_first, cv::noArray(), kp_first, descriptors_first );
     detector->detectAndCompute( info.img_second, cv::noArray(), kp_second, descriptors_second );
 
-    cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::BRUTEFORCE);
+    // cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::BRUTEFORCE);
+    cv::Ptr<cv::FlannBasedMatcher> matcher = new cv::FlannBasedMatcher(cv::makePtr<cv::flann::LshIndexParams>(12, 20, 2));
 
-    std::vector< std::vector<cv::DMatch> > knn_matches;
+    std::vector<std::vector<cv::DMatch>> knn_matches;
 
     // std::cout << std::this_thread::get_id() << ' ' 
     //     << info.descriptors_first->size() << ' ' << info.descriptors_second->size() << std::endl;
