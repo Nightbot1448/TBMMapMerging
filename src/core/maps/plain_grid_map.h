@@ -122,10 +122,12 @@ public: // methods
 		int w = width();
 		int h = height();
 		auto origin_ = origin();
-		cv::Mat_<uchar> map_img(w,h);
-		for(int i=0; i<h; i++){
+		int inv_start = 300, inv_before_end = 200; 
+		cv::Mat_<uchar> map_img(h-inv_start-inv_before_end,w);
+		for(int i=inv_start; i<h-inv_before_end; i++){
 			for(int j=0; j<w; j++){
-				map_img(h-i-1,j) = static_cast<uchar>((1 - operator[](Coord(j-origin_.x, i-origin_.y)).occupancy().prob_occ) * 255);
+				map_img(h-i-inv_before_end-1,j) = static_cast<uchar>(
+						(1 - operator[](Coord(j-origin_.x, i-origin_.y)).occupancy().prob_occ) * 255);
 			}   
 		}
 		return map_img;
@@ -153,6 +155,16 @@ public: // methods
 		result.at(0) = occ_map;
 		result.at(1) = emp_map;
 		result.at(2) = unk_map;
+		return result;
+	}
+
+	virtual std::array<cv::Mat, 4> get_maps_grs_ofu() const {
+		std::array<cv::Mat, 3> ofu = get_3_maps();
+		std::array<cv::Mat, 4> result;
+		result.at(0) = convert_to_grayscale_img();
+		result.at(1) = ofu.at(0);
+		result.at(2) = ofu.at(1);
+		result.at(3) = ofu.at(2);
 		return result;
 	}
 

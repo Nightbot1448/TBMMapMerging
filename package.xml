@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>slam_constructor</name>
+  <name>map_merging</name>
   <version>0.9.1</version>
   <description>
     The package provides implementation of several 2D laser-based simultaneous
