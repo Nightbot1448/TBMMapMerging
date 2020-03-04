@@ -12,6 +12,7 @@
 
 #include <thread>
 #include <future>
+#include <cmath>
 
 #include <set>
 
@@ -71,7 +72,11 @@ std::vector<cv::DMatch> get_good_matches(cv::Mat &first_descriptor, cv::Mat &sec
     return good_matches;
 }
 
-void new_descriptors_concatinate(_thread_change_descriptor info, std::promise<_thread_change_descriptor_return> *ret)
+double Euclud_distance(cv::KeyPoint &f, cv::KeyPoint &s){
+    return std::sqrt(std::pow(f.pt.x-s.pt.x,2)+std::pow(f.pt.y-s.pt.y,2));
+}
+
+_thread_change_descriptor_return new_descriptors_concatinate(_thread_change_descriptor info)
 {
     cv::Mat new_d_first(info.count_of_features, 32*3, CV_8U), new_d_second(info.count_of_features, 32*3, CV_8U);
 
@@ -87,9 +92,14 @@ void new_descriptors_concatinate(_thread_change_descriptor info, std::promise<_t
         std::memcpy(dst_second+64,  info.d_second_unk.ptr(row_id), 32);
 	}
     auto good_matches = get_good_matches( new_d_first, new_d_second, info.ratio_thresh );
-    _thread_change_descriptor_return to_return(new_d_first, new_d_second, good_matches);
-    ret->set_value(to_return);
+    return _thread_change_descriptor_return(new_d_first, new_d_second, good_matches);
 }
+
+void parallel_new_descriptors_concatinate(_thread_change_descriptor info, std::promise<_thread_change_descriptor_return> *ret)
+{
+    ret->set_value(new_descriptors_concatinate(info));
+}
+
 
 void new_descriptors_land(_thread_change_descriptor info, std::promise<_thread_change_descriptor_return> *ret)
 {
@@ -149,6 +159,64 @@ void new_descriptors_lxor(_thread_change_descriptor info, std::promise<_thread_c
     auto good_matches = get_good_matches( new_d_first, new_d_second, info.ratio_thresh );
     _thread_change_descriptor_return to_return(new_d_first, new_d_second, good_matches);
     ret->set_value(to_return);
+}
+
+bool get_good_distance_vec_size(std::vector<cv::KeyPoint> &kp_first_prob, std::vector<cv::KeyPoint> &kp_second_prob,
+                                std::vector<cv::KeyPoint> &kp_first_conc, std::vector<cv::KeyPoint> &kp_second_conc,
+                                std::vector<cv::DMatch> &gm_prob, std::vector<cv::DMatch> &gm_conc, 
+                                size_t &prob_good_dist_sz, size_t &conc_good_dist_sz){
+    std::vector<double> distance_prob, distance_conc;
+    try{
+        for(size_t match_id = 0; match_id < gm_prob.size(); match_id++){
+            cv::DMatch &match = gm_prob[match_id];
+            distance_prob.push_back(Euclud_distance(kp_first_prob.at(match.queryIdx),kp_second_prob.at(match.trainIdx)));
+        }
+        for(size_t match_id = 0; match_id < gm_conc.size(); match_id++){
+            cv::DMatch &match = gm_conc[match_id];
+            distance_conc.push_back(Euclud_distance(kp_first_conc.at(match.queryIdx),kp_second_conc.at(match.trainIdx)));
+        }
+    }
+    catch(std::out_of_range &ex){
+        std::cout << ex.what() << std::endl;
+        return false;
+    }
+
+    cv::Scalar mean_prob_s, stddev_prob_s, mean_conc_s, stddev_conc_s;
+    if(distance_prob.size()) {
+        try{
+            cv::meanStdDev(distance_prob, mean_prob_s, stddev_prob_s);
+            double  mean_prob = mean_prob_s[0],
+                    stddev_prob = stddev_prob_s[0];
+            double  prob_min = mean_prob - 1.5*stddev_prob,
+                    prob_max = mean_prob + 1.5*stddev_prob;
+            distance_prob.erase(std::remove_if(distance_prob.begin(), distance_prob.end(), 
+                                [prob_min, prob_max](const double &dist){ return dist < prob_min || dist > prob_max;}),
+                                distance_prob.end());
+            prob_good_dist_sz = distance_prob.size();
+        }
+        catch(std::out_of_range &e){
+            std::cout << e.what() << std::endl;
+            return false;
+        }
+    }
+    if(distance_conc.size()){
+        try{
+            cv::meanStdDev(distance_conc, mean_conc_s, stddev_conc_s);
+            double  mean_conc = mean_conc_s[0],
+                    stddev_conc = stddev_conc_s[0] > 5 ? stddev_conc_s[0]*2 : stddev_conc_s[0]*2;
+            double  conc_min = mean_conc - stddev_conc,
+                    conc_max = mean_conc + stddev_conc;
+            distance_conc.erase( std::remove_if(distance_conc.begin(), distance_conc.end(), 
+                                [conc_min, conc_max](const double &dist){ return dist < conc_min || dist > conc_max;}),
+                                distance_conc.end());
+            conc_good_dist_sz = distance_conc.size();
+        }
+        catch(std::out_of_range &e){
+            std::cout << e.what() << std::endl;
+            return false;
+        }
+    }
+    return true;
 }
 
 #endif // COMPUTE_DESCRIPTORS_HPP

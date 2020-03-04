@@ -70,7 +70,7 @@ int main(int  argc, char **argv) {
                                                     lor_future  = lor_promise.get_future(),
                                                     lxor_future  = lxor_promise.get_future();
     
-    std::thread concatinate_thread(new_descriptors_concatinate, info, &concatinate_promise);
+    std::thread concatinate_thread(parallel_new_descriptors_concatinate, info, &concatinate_promise);
     std::thread land_thread(new_descriptors_land, info, &land_promise);
     std::thread lor_thread(new_descriptors_lor, info, &lor_promise);
     std::thread lxor_thread(new_descriptors_lxor, info, &lxor_promise);
