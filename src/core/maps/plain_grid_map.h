@@ -147,7 +147,8 @@ public: // methods
 				auto cell_belief = operator[](Coord(j-origin_.x, i-origin_.y)).belief();
 				occ_map(h - i - inv_before_end - 1, j) = static_cast<uchar>(cell_belief.occupied() * 255);
 				emp_map(h - i - inv_before_end - 1, j) = static_cast<uchar>(cell_belief.empty() * 255);
-				unk_map(h - i - inv_before_end - 1, j) = static_cast<uchar>(cell_belief.unknown() * 255);
+				// HACK: inversed unknown map
+				unk_map(h - i - inv_before_end - 1, j) = static_cast<uchar>((1-cell_belief.unknown()) * 255);
 			}
 		}
 		
