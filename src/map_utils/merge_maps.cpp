@@ -1,11 +1,5 @@
 #include "compute_descriptors.h"
-
-// std::vector<cv::DMatch> get_good_matches(cv::Mat &first_descriptor, cv::Mat &second_descriptor, float ratio_thresh);
-// void new_descriptors_concatinate(_thread_change_descriptor info, std::promise<_thread_change_descriptor_return> *ret);
-// void new_descriptors_land(_thread_change_descriptor info, std::promise<_thread_change_descriptor_return> *ret);
-// void new_descriptors_lor(_thread_change_descriptor info, std::promise<_thread_change_descriptor_return> *ret);
-// void new_descriptors_lxor(_thread_change_descriptor info, std::promise<_thread_change_descriptor_return> *ret);
-
+#include <chrono>
 int main(int  argc, char **argv) {
     auto gmp = MapValues::gmp;
      const cv::String keys =
@@ -39,12 +33,17 @@ int main(int  argc, char **argv) {
     UnboundedPlainGridMap second_map = UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp);
     second_map.load_state(file_content);
     std::array<cv::Mat,4> second_parts_maps = second_map.get_maps_grs_ofu();
+
     
+    std::chrono::time_point<std::chrono::system_clock> before_act = std::chrono::system_clock::now();
+
+
     std::vector<cv::KeyPoint> kp_first, kp_second;
     cv::Mat d_first_prob, d_second_prob,
             d_first_occ, d_first_emp, d_first_unk,
             d_second_occ,d_second_emp,d_second_unk;
 
+    
     cv::Ptr<cv::ORB> detector = cv::ORB::create( count_of_features, scale_factor );
 
     detector->detectAndCompute(first_parts_maps.at(0), cv::noArray(), kp_first, d_first_prob);
@@ -90,11 +89,6 @@ int main(int  argc, char **argv) {
                             good_matches_lor = lor_ret.good_matches,
                             good_matches_lxor = lxor_ret.good_matches;
 
-    std::cout << "count of good matches prob: " << good_matches_prob.size() << std::endl;
-    std::cout << "count of good matches conc: " << good_matches_concatinate.size() << std::endl;
-    std::cout << "count of good matches land: " << good_matches_land.size() << std::endl;
-    std::cout << "count of good matches lor: " << good_matches_lor.size() << std::endl;
-    std::cout << "count of good matches lxor: " << good_matches_lxor.size() << std::endl;
 	
     //-- Draw matches
     cv::Mat img_matches_prob, img_matches_conc, img_matches_land, img_matches_lor, img_matches_lxor;
@@ -117,6 +111,17 @@ int main(int  argc, char **argv) {
     drawMatches(first_parts_maps.at(0), kp_first, second_parts_maps.at(0), kp_second, 
                 good_matches_lxor, img_matches_lxor, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
                 std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+    
+
+    std::chrono::time_point<std::chrono::system_clock> after_act = std::chrono::system_clock::now();
+    std::cout << "time: " << std::chrono::duration_cast<std::chrono::milliseconds>(after_act-before_act).count() << std::endl;
+
+
+    std::cout << "count of good matches prob: " << good_matches_prob.size() << std::endl;
+    std::cout << "count of good matches conc: " << good_matches_concatinate.size() << std::endl;
+    std::cout << "count of good matches land: " << good_matches_land.size() << std::endl;
+    std::cout << "count of good matches lor: " << good_matches_lor.size() << std::endl;
+    std::cout << "count of good matches lxor: " << good_matches_lxor.size() << std::endl;
 
     cv::imshow("Good Matches prob", img_matches_prob );
     cv::imshow("Good Matches conc", img_matches_conc );

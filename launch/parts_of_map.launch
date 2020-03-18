@@ -9,15 +9,15 @@
       <arg name="percent" default="60" />
 
       <node name="rviz_first_map" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug.rviz" />
+            args="-d $(find map_merging)/rviz/debug.rviz" />
 
       <node name="rviz_map_part_1" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug_second_map.rviz" />
+            args="-d $(find map_merging)/rviz/debug_second_map.rviz" />
       
       <node name="rviz_map_part_2" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug_conj.rviz" />
+            args="-d $(find map_merging)/rviz/debug_conj.rviz" />
      
-      <node pkg="slam_constructor" type="parts_of_map" name="parts_of_map" output="screen"
+      <node pkg="map_merging" type="parts_of_map" name="parts_of_map" output="screen"
           launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
             <param name="input_file" value="$(arg input_file)"/>
             <param name="first_output_file" value="$(arg first_output_file)"/>

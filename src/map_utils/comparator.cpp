@@ -1,6 +1,7 @@
 #include "compute_descriptors.h"
 #include "orbDescriptorscomparator.h"
 #include "descriptorsComarator.h"
+#include <chrono>
 
 int main(int argc, char **argv) {
     const cv::String keys =
@@ -17,10 +18,13 @@ int main(int argc, char **argv) {
         ;
     cv::CommandLineParser parser(argc, argv, keys);
     Parameters p(parser);
-    // OrbDescriptorsComparator comparator(p);
-    DescriptorsComparator comparator(p);
-    
+    OrbDescriptorsComparator comparator(p);
+    // DescriptorsComparator comparator(p);
+
+    std::chrono::time_point<std::chrono::system_clock> before_comp = std::chrono::system_clock::now();
     comparator.compareDescriptors();
+    std::chrono::time_point<std::chrono::system_clock> after_comp = std::chrono::system_clock::now();
+    std::cout << "compare: " << std::chrono::duration_cast<std::chrono::milliseconds>(after_comp-before_comp).count() << std::endl;
 
     // cv::imshow("occ", second_parts_maps.at(1));
     // cv::imshow("emp", second_parts_maps.at(2));

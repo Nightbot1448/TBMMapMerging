@@ -209,6 +209,7 @@ public: // methods
 		Deserializer d(data);
 		d >> h >> w >> s >> _origin.x >> _origin.y;
 
+
 		set_width(w);
 		set_height(h);
 		set_scale(s);
@@ -233,6 +234,7 @@ public: // methods
 				row.push_back(std::move(cell));
 			}
 		}
+		// std::cout << "Size: " << _cells.size() << 'x' << _cells.at(0).size() << std::endl;
 	}
 
 protected: // methods

@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <fstream>
 #include <iterator>
+#include <chrono>
 
 #include <nav_msgs/OccupancyGrid.h>
 
@@ -36,6 +37,8 @@ int main(int  argc, char **argv) {
     std::ifstream in(first_file);
     std::ifstream in_second(second_file);
     
+    std::chrono::time_point<std::chrono::system_clock> before_reading = std::chrono::system_clock::now();
+
     std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
                                    std::istreambuf_iterator<char>());
     std::vector<char> second_file_content((std::istreambuf_iterator<char>(in_second)),
@@ -43,6 +46,10 @@ int main(int  argc, char **argv) {
 
     map.load_state(file_content);
     map_second.load_state(second_file_content);
+
+    std::chrono::time_point<std::chrono::system_clock> after_reading = std::chrono::system_clock::now();
+
+    ROS_INFO("time for read: %ld", std::chrono::duration_cast<std::chrono::milliseconds>(after_reading-before_reading).count());
 
     nav_msgs::OccupancyGrid map_msg;
     map_msg.header.frame_id = tf_frame;
@@ -72,6 +79,33 @@ int main(int  argc, char **argv) {
     nav_msgs::OccupancyGrid map_msg_conj(map_msg);
     nav_msgs::OccupancyGrid map_msg_disj(map_msg);
 
+    ROS_INFO("new map size: %d %d", map_conj.width(), map_conj.height());
+    std::chrono::time_point<std::chrono::system_clock> before_merge = std::chrono::system_clock::now();
+    
+    for (pnt.y = -origin.y; pnt.y < end_of_map.y; ++pnt.y) {
+        for (pnt.x = -origin.x; pnt.x < end_of_map.x; ++pnt.x) {
+            const TBM &el0 = dynamic_cast<const VinyDSCell &>(map[pnt]).belief();
+            const TBM &el1 = dynamic_cast<const VinyDSCell &>(map_second[pnt]).belief();
+            TBM res = conjunctive(el0,el1);
+            Occupancy occ = TBM_to_O(res);
+            map_conj.setCell(pnt, new VinyDSCell(occ, res));
+        }
+    }
+    std::chrono::time_point<std::chrono::system_clock> after_merge = std::chrono::system_clock::now();
+    ROS_INFO("conj merge: %ld", std::chrono::duration_cast<std::chrono::milliseconds>(after_merge-before_merge).count());
+    
+    before_merge = std::chrono::system_clock::now();
+    for (pnt.y = -origin.y; pnt.y < end_of_map.y; ++pnt.y) {
+        for (pnt.x = -origin.x; pnt.x < end_of_map.x; ++pnt.x) {
+            const TBM &el0 = dynamic_cast<const VinyDSCell &>(map[pnt]).belief();
+            const TBM &el1 = dynamic_cast<const VinyDSCell &>(map_second[pnt]).belief();
+            TBM res = disjunctive(el0,el1);
+            Occupancy occ = TBM_to_O(res);
+            map_disj.setCell(pnt, new VinyDSCell(occ, res));
+        }
+    }
+    after_merge = std::chrono::system_clock::now();
+    ROS_INFO("disj merge: %ld", std::chrono::duration_cast<std::chrono::milliseconds>(after_merge-before_merge).count());
 
     for (pnt.y = -origin.y; pnt.y < end_of_map.y; ++pnt.y) {
         for (pnt.x = -origin.x; pnt.x < end_of_map.x; ++pnt.x) {
@@ -89,12 +123,8 @@ int main(int  argc, char **argv) {
             TBM res_conj = conjunctive(el0,el1);
             TBM res_disj = disjunctive(el0,el1);
 
-
             Occupancy o_conj = TBM_to_O(res_conj);
             Occupancy o_disj = TBM_to_O(res_disj);
-
-            map_conj.setCell(pnt, new VinyDSCell(o_conj, res_conj));
-            map_disj.setCell(pnt, new VinyDSCell(o_disj, res_disj));
 
             value = static_cast<double>(o_conj);
             cell_value = value == -1 ? -1 : static_cast<int>(value * 100);
@@ -103,7 +133,6 @@ int main(int  argc, char **argv) {
             value = static_cast<double>(o_disj);
             cell_value = value == -1 ? -1 : static_cast<int>(value * 100);
             map_msg_disj.data.push_back(cell_value);         
-            
         }
     }
 

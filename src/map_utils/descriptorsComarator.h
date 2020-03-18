@@ -25,6 +25,7 @@ public:
     void compareDescriptors();
 
     // bool get_good_distance_vec_size(size_t &orb, size_t &brisk, size_t &sift, size_t &surf);
+    void detectAndCompute(cv::Ptr<cv::Feature2D> detector, Algorythm &alg);
     void detectAndComputeORB();
     void detectAndComputeBRISK();
     void detectAndComputeSIFT();
@@ -63,57 +64,72 @@ DescriptorsComparator::DescriptorsComparator(Parameters p) : parameters(p){
     second_parts_maps = second_map->get_maps_grs_ofu();
 }
 
+void DescriptorsComparator::detectAndCompute(cv::Ptr<cv::Feature2D> detector, Algorythm &alg){
+    detector->detect(first_parts_maps.at(0), alg.kp_first, cv::noArray());
+    detector->compute(first_parts_maps.at(1), alg.kp_first, alg.d_occ_first);
+    detector->compute(first_parts_maps.at(2), alg.kp_first, alg.d_emp_first);
+    detector->compute(first_parts_maps.at(3), alg.kp_first, alg.d_unk_first);
+
+    detector->detect(second_parts_maps.at(0), alg.kp_second, cv::noArray());
+    detector->compute(second_parts_maps.at(1), alg.kp_second, alg.d_occ_second);
+    detector->compute(second_parts_maps.at(2), alg.kp_second, alg.d_emp_second);
+    detector->compute(second_parts_maps.at(3), alg.kp_second, alg.d_unk_second);    
+}
+
 void DescriptorsComparator::detectAndComputeORB() {
     cv::Ptr<cv::ORB> orb_detector = cv::ORB::create( parameters.count_of_features, parameters.scale_factor );
-    
-    orb_detector->detect(first_parts_maps.at(0), orb.kp_first, cv::noArray());
-    orb_detector->compute(first_parts_maps.at(1), orb.kp_first, orb.d_occ_first);
-    orb_detector->compute(first_parts_maps.at(2), orb.kp_first, orb.d_emp_first);
-    orb_detector->compute(first_parts_maps.at(3), orb.kp_first, orb.d_unk_first);
+    detectAndCompute(orb_detector, orb);
+    // orb_detector->detect(first_parts_maps.at(0), orb.kp_first, cv::noArray());
+    // orb_detector->compute(first_parts_maps.at(1), orb.kp_first, orb.d_occ_first);
+    // orb_detector->compute(first_parts_maps.at(2), orb.kp_first, orb.d_emp_first);
+    // orb_detector->compute(first_parts_maps.at(3), orb.kp_first, orb.d_unk_first);
 
-    orb_detector->detect(second_parts_maps.at(0), orb.kp_second, cv::noArray());
-    orb_detector->compute(second_parts_maps.at(1), orb.kp_second, orb.d_occ_second);
-    orb_detector->compute(second_parts_maps.at(2), orb.kp_second, orb.d_emp_second);
-    orb_detector->compute(second_parts_maps.at(3), orb.kp_second, orb.d_unk_second);    
+    // orb_detector->detect(second_parts_maps.at(0), orb.kp_second, cv::noArray());
+    // orb_detector->compute(second_parts_maps.at(1), orb.kp_second, orb.d_occ_second);
+    // orb_detector->compute(second_parts_maps.at(2), orb.kp_second, orb.d_emp_second);
+    // orb_detector->compute(second_parts_maps.at(3), orb.kp_second, orb.d_unk_second);    
 }
 
 void DescriptorsComparator::detectAndComputeBRISK() {
     cv::Ptr<cv::BRISK> brisk_detector = cv::BRISK::create(60, 4, 1.f);
-    brisk_detector->detect(first_parts_maps.at(0), brisk.kp_first, cv::noArray());
-    brisk_detector->compute(first_parts_maps.at(1), brisk.kp_first, brisk.d_occ_first);
-    brisk_detector->compute(first_parts_maps.at(2), brisk.kp_first, brisk.d_emp_first);
-    brisk_detector->compute(first_parts_maps.at(3), brisk.kp_first, brisk.d_unk_first);
+    detectAndCompute(brisk_detector, brisk);
+    // brisk_detector->detect(first_parts_maps.at(0), brisk.kp_first, cv::noArray());
+    // brisk_detector->compute(first_parts_maps.at(1), brisk.kp_first, brisk.d_occ_first);
+    // brisk_detector->compute(first_parts_maps.at(2), brisk.kp_first, brisk.d_emp_first);
+    // brisk_detector->compute(first_parts_maps.at(3), brisk.kp_first, brisk.d_unk_first);
 
-    brisk_detector->detect(second_parts_maps.at(0), brisk.kp_second, cv::noArray());
-    brisk_detector->compute(second_parts_maps.at(1), brisk.kp_second, brisk.d_occ_second);
-    brisk_detector->compute(second_parts_maps.at(2), brisk.kp_second, brisk.d_emp_second);
-    brisk_detector->compute(second_parts_maps.at(3), brisk.kp_second, brisk.d_unk_second);
+    // brisk_detector->detect(second_parts_maps.at(0), brisk.kp_second, cv::noArray());
+    // brisk_detector->compute(second_parts_maps.at(1), brisk.kp_second, brisk.d_occ_second);
+    // brisk_detector->compute(second_parts_maps.at(2), brisk.kp_second, brisk.d_emp_second);
+    // brisk_detector->compute(second_parts_maps.at(3), brisk.kp_second, brisk.d_unk_second);
 }
 
 void DescriptorsComparator::detectAndComputeSIFT() {
     cv::Ptr<cv::xfeatures2d::SIFT> sift_detector = cv::xfeatures2d::SIFT::create();
-    sift_detector->detect(first_parts_maps.at(0), sift.kp_first, cv::noArray());
-    sift_detector->compute(first_parts_maps.at(1), sift.kp_first, sift.d_occ_first);
-    sift_detector->compute(first_parts_maps.at(2), sift.kp_first, sift.d_emp_first);
-    sift_detector->compute(first_parts_maps.at(3), sift.kp_first, sift.d_unk_first);
+    detectAndCompute(sift_detector, sift);
+    // sift_detector->detect(first_parts_maps.at(0), sift.kp_first, cv::noArray());
+    // sift_detector->compute(first_parts_maps.at(1), sift.kp_first, sift.d_occ_first);
+    // sift_detector->compute(first_parts_maps.at(2), sift.kp_first, sift.d_emp_first);
+    // sift_detector->compute(first_parts_maps.at(3), sift.kp_first, sift.d_unk_first);
 
-    sift_detector->detect(second_parts_maps.at(0), sift.kp_second, cv::noArray());
-    sift_detector->compute(second_parts_maps.at(1), sift.kp_second, sift.d_occ_second);
-    sift_detector->compute(second_parts_maps.at(2), sift.kp_second, sift.d_emp_second);
-    sift_detector->compute(second_parts_maps.at(3), sift.kp_second, sift.d_unk_second);
+    // sift_detector->detect(second_parts_maps.at(0), sift.kp_second, cv::noArray());
+    // sift_detector->compute(second_parts_maps.at(1), sift.kp_second, sift.d_occ_second);
+    // sift_detector->compute(second_parts_maps.at(2), sift.kp_second, sift.d_emp_second);
+    // sift_detector->compute(second_parts_maps.at(3), sift.kp_second, sift.d_unk_second);
 }
 
 void DescriptorsComparator::detectAndComputeSURF() {
     cv::Ptr<cv::xfeatures2d::SURF> surf_detector = cv::xfeatures2d::SURF::create(400);
-    surf_detector->detect(first_parts_maps.at(0), surf.kp_first, cv::noArray());
-    surf_detector->compute(first_parts_maps.at(1), surf.kp_first, surf.d_occ_first);
-    surf_detector->compute(first_parts_maps.at(2), surf.kp_first, surf.d_emp_first);
-    surf_detector->compute(first_parts_maps.at(3), surf.kp_first, surf.d_unk_first);
+    detectAndCompute(surf_detector, surf);
+    // surf_detector->detect(first_parts_maps.at(0), surf.kp_first, cv::noArray());
+    // surf_detector->compute(first_parts_maps.at(1), surf.kp_first, surf.d_occ_first);
+    // surf_detector->compute(first_parts_maps.at(2), surf.kp_first, surf.d_emp_first);
+    // surf_detector->compute(first_parts_maps.at(3), surf.kp_first, surf.d_unk_first);
 
-    surf_detector->detect(second_parts_maps.at(0), surf.kp_second, cv::noArray());
-    surf_detector->compute(second_parts_maps.at(1), surf.kp_second, surf.d_occ_second);
-    surf_detector->compute(second_parts_maps.at(2), surf.kp_second, surf.d_emp_second);
-    surf_detector->compute(second_parts_maps.at(3), surf.kp_second, surf.d_unk_second);
+    // surf_detector->detect(second_parts_maps.at(0), surf.kp_second, cv::noArray());
+    // surf_detector->compute(second_parts_maps.at(1), surf.kp_second, surf.d_occ_second);
+    // surf_detector->compute(second_parts_maps.at(2), surf.kp_second, surf.d_emp_second);
+    // surf_detector->compute(second_parts_maps.at(3), surf.kp_second, surf.d_unk_second);
 }
 
 void DescriptorsComparator::conc_and_good_matches(Algorythm &alg){
@@ -139,26 +155,6 @@ void DescriptorsComparator::compareDescriptors() {
     conc_and_good_matches(surf);
     conc_and_good_matches(sift);
     
-    // size_t orb_good_dist_sz, brisk_good_dist_sz, sift_good_dist_sz, surf_good_dist_sz;
-    
-        //-- Draw matches
-        // cv::Mat img_matches_orb, img_matches_brisk, img_matches_sift, img_matches_surf;
-        
-        // drawMatches(first_parts_maps.at(0), orb.kp_first, second_parts_maps.at(0), orb.kp_second, 
-        //             orb.good_matches, img_matches_orb, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
-        //             std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-
-        // drawMatches(first_parts_maps.at(0), brisk.kp_first, second_parts_maps.at(0), brisk.kp_second, 
-        //             brisk.good_matches, img_matches_brisk, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
-        //             std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-
-        // drawMatches(first_parts_maps.at(0), sift.kp_first, second_parts_maps.at(0), sift.kp_second, 
-        //             sift.good_matches, img_matches_sift, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
-        //             std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-        
-        // drawMatches(first_parts_maps.at(0), surf.kp_first, second_parts_maps.at(0), surf.kp_second, 
-        //             surf.good_matches, img_matches_surf, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
-        //             std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
     if(parameters.test_id>=0){
         std::string test_folder = parameters.base_desc_tests_path+std::to_string(parameters.test_id)+"/";
@@ -174,7 +170,6 @@ void DescriptorsComparator::compareDescriptors() {
             << orb.good_dist_sz << ' ' << brisk.good_dist_sz << ' ' 
                 << sift.good_dist_sz << ' ' << surf.good_dist_sz << std::endl;
         out.close();
-
     }
 }
 

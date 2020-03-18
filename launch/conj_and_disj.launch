@@ -6,18 +6,18 @@
       <arg name="second_file" default="/home/dmo/Documents/diplom/dumps/shifted_map_8.txt" />
 
       <node name="rviz_first_map" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug.rviz" />
+            args="-d $(find map_merging)/rviz/debug.rviz" />
 
       <node name="rviz_second_map" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug_second_map.rviz" />
+            args="-d $(find map_merging)/rviz/debug_second_map.rviz" />
           
       <node name="rviz_conj" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug_conj.rviz" />
+            args="-d $(find map_merging)/rviz/debug_conj.rviz" />
           
       <node name="rviz_disj" pkg="rviz" type="rviz" respawn="true"
-            args="-d $(find slam_constructor)/rviz/debug_disj.rviz" />
+            args="-d $(find map_merging)/rviz/debug_disj.rviz" />
 
-      <node pkg="slam_constructor" type="conj_and_disj" name="conj_and_disj" output="screen"
+      <node pkg="map_merging" type="conj_and_disj" name="conj_and_disj" output="screen"
             launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
             <param name="first_file" value="$(arg first_file)"/>
             <param name="second_file" value="$(arg second_file)"/>
