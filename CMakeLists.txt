@@ -10,17 +10,23 @@ else()
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   roslz4
 )
-
+  
 find_package( OpenCV REQUIRED )
+# find_package(PCL 1.10 REQUIRED COMPONENTS common filters features)
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  # ${PCL_INCLUDE_DIRS}
 )
+
+# link_directories(${PCL_LIBRARY_DIRS})
+# add_definitions(${PCL_DEFINITIONS})
 
 catkin_package()
 
@@ -31,6 +37,7 @@ catkin_package()
 add_executable(conj_and_disj src/map_utils/conj_and_disj.cpp)
 add_executable(merge_maps src/map_utils/merge_maps.cpp)
 add_executable(comparator src/map_utils/comparator.cpp)
+add_executable(test_algorythm src/test_alg/test_algorythm.cpp)
 
 
 # target_link_libraries(load_state ${catkin_LIBRARIES} ${OpenCV_LIBS})
@@ -39,6 +46,25 @@ add_executable(comparator src/map_utils/comparator.cpp)
 target_link_libraries(conj_and_disj ${catkin_LIBRARIES} ${OpenCV_LIBS})
 target_link_libraries(merge_maps ${catkin_LIBRARIES} ${OpenCV_LIBS})
 target_link_libraries(comparator ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(test_algorythm ${catkin_LIBRARIES} ${OpenCV_LIBS})
+
+
+set(comparator_library_files 
+  src/map_utils/for_lib.cpp
+  src/map_utils_headers/compareParametres.h
+  src/map_utils_headers/compute_descriptors.h
+  src/map_utils_headers/descriptorsComarator.h
+  src/map_utils_headers/orbDescriptorscomparator.h
+)
+
+# SET_TARGET_PROPERTIES(comparator_library PROPERTIES LINKER_LANGUAGE C++)
+# add_library(comparator_library STATIC src/map_utils_headers ${comparator_library_files}
+    # src/map_utils_headers/compute_descriptors.h
+    # src/map_utils_headers/orbDescriptorscomparator.h
+    # src/map_utils_headers/descriptorsComarator.h
+  # )
+# target_link_libraries(comparator_library ${catkin_LIBRARIES} ${OpenCV_LIBS})
+
 
 install(
   TARGETS

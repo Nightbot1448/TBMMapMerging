@@ -1,5 +1,5 @@
-#ifndef COMPUTE_DESCRIPTORS_HPP
-#define COMPUTE_DESCRIPTORS_HPP
+#ifndef COMPUTE_DESCRIPTORS_H
+#define COMPUTE_DESCRIPTORS_H
 
 #include <fstream>
 #include <iterator>

@@ -24,7 +24,6 @@ public:
     DescriptorsComparator(Parameters p);
     void compareDescriptors();
 
-    // bool get_good_distance_vec_size(size_t &orb, size_t &brisk, size_t &sift, size_t &surf);
     void detectAndCompute(cv::Ptr<cv::Feature2D> detector, Algorythm &alg);
     void detectAndComputeORB();
     void detectAndComputeBRISK();
@@ -79,57 +78,21 @@ void DescriptorsComparator::detectAndCompute(cv::Ptr<cv::Feature2D> detector, Al
 void DescriptorsComparator::detectAndComputeORB() {
     cv::Ptr<cv::ORB> orb_detector = cv::ORB::create( parameters.count_of_features, parameters.scale_factor );
     detectAndCompute(orb_detector, orb);
-    // orb_detector->detect(first_parts_maps.at(0), orb.kp_first, cv::noArray());
-    // orb_detector->compute(first_parts_maps.at(1), orb.kp_first, orb.d_occ_first);
-    // orb_detector->compute(first_parts_maps.at(2), orb.kp_first, orb.d_emp_first);
-    // orb_detector->compute(first_parts_maps.at(3), orb.kp_first, orb.d_unk_first);
-
-    // orb_detector->detect(second_parts_maps.at(0), orb.kp_second, cv::noArray());
-    // orb_detector->compute(second_parts_maps.at(1), orb.kp_second, orb.d_occ_second);
-    // orb_detector->compute(second_parts_maps.at(2), orb.kp_second, orb.d_emp_second);
-    // orb_detector->compute(second_parts_maps.at(3), orb.kp_second, orb.d_unk_second);    
 }
 
 void DescriptorsComparator::detectAndComputeBRISK() {
     cv::Ptr<cv::BRISK> brisk_detector = cv::BRISK::create(60, 4, 1.f);
     detectAndCompute(brisk_detector, brisk);
-    // brisk_detector->detect(first_parts_maps.at(0), brisk.kp_first, cv::noArray());
-    // brisk_detector->compute(first_parts_maps.at(1), brisk.kp_first, brisk.d_occ_first);
-    // brisk_detector->compute(first_parts_maps.at(2), brisk.kp_first, brisk.d_emp_first);
-    // brisk_detector->compute(first_parts_maps.at(3), brisk.kp_first, brisk.d_unk_first);
-
-    // brisk_detector->detect(second_parts_maps.at(0), brisk.kp_second, cv::noArray());
-    // brisk_detector->compute(second_parts_maps.at(1), brisk.kp_second, brisk.d_occ_second);
-    // brisk_detector->compute(second_parts_maps.at(2), brisk.kp_second, brisk.d_emp_second);
-    // brisk_detector->compute(second_parts_maps.at(3), brisk.kp_second, brisk.d_unk_second);
 }
 
 void DescriptorsComparator::detectAndComputeSIFT() {
     cv::Ptr<cv::xfeatures2d::SIFT> sift_detector = cv::xfeatures2d::SIFT::create();
     detectAndCompute(sift_detector, sift);
-    // sift_detector->detect(first_parts_maps.at(0), sift.kp_first, cv::noArray());
-    // sift_detector->compute(first_parts_maps.at(1), sift.kp_first, sift.d_occ_first);
-    // sift_detector->compute(first_parts_maps.at(2), sift.kp_first, sift.d_emp_first);
-    // sift_detector->compute(first_parts_maps.at(3), sift.kp_first, sift.d_unk_first);
-
-    // sift_detector->detect(second_parts_maps.at(0), sift.kp_second, cv::noArray());
-    // sift_detector->compute(second_parts_maps.at(1), sift.kp_second, sift.d_occ_second);
-    // sift_detector->compute(second_parts_maps.at(2), sift.kp_second, sift.d_emp_second);
-    // sift_detector->compute(second_parts_maps.at(3), sift.kp_second, sift.d_unk_second);
 }
 
 void DescriptorsComparator::detectAndComputeSURF() {
     cv::Ptr<cv::xfeatures2d::SURF> surf_detector = cv::xfeatures2d::SURF::create(400);
     detectAndCompute(surf_detector, surf);
-    // surf_detector->detect(first_parts_maps.at(0), surf.kp_first, cv::noArray());
-    // surf_detector->compute(first_parts_maps.at(1), surf.kp_first, surf.d_occ_first);
-    // surf_detector->compute(first_parts_maps.at(2), surf.kp_first, surf.d_emp_first);
-    // surf_detector->compute(first_parts_maps.at(3), surf.kp_first, surf.d_unk_first);
-
-    // surf_detector->detect(second_parts_maps.at(0), surf.kp_second, cv::noArray());
-    // surf_detector->compute(second_parts_maps.at(1), surf.kp_second, surf.d_occ_second);
-    // surf_detector->compute(second_parts_maps.at(2), surf.kp_second, surf.d_emp_second);
-    // surf_detector->compute(second_parts_maps.at(3), surf.kp_second, surf.d_unk_second);
 }
 
 void DescriptorsComparator::conc_and_good_matches(Algorythm &alg){
@@ -181,8 +144,15 @@ bool DescriptorsComparator::good_distance_vector_size(Algorythm &alg){
             distances.push_back(Euclud_distance(alg.kp_first.at(match.queryIdx),alg.kp_second.at(match.trainIdx)));
         }
 
+        std::vector<double> mean, stdDev;
+        cv::meanStdDev(distances, mean, stdDev);
+
+        std::cout << mean.at(0) << ' ' << stdDev.at(0) << std::endl;
+
         float   min_dist = parameters.min_dist,
                 max_dist = parameters.max_dist;
+
+        
         distances.erase(std::remove_if(distances.begin(), distances.end(), 
                             [min_dist, max_dist](const double &dist){ return dist < min_dist || dist > max_dist;}),
                             distances.end());

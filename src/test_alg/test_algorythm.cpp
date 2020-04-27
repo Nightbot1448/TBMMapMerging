@@ -1,8 +1,7 @@
 #include "../map_utils_headers/compute_descriptors.h"
-#include "../map_utils_headers/orbDescriptorscomparator.h"
-#include "../map_utils_headers/descriptorsComarator.h"
-// #include "orbDescriptorscomparator.h"
-// #include "descriptorsComarator.h"
+#include "Cluster.hpp"
+// #include "../map_utils_headers/orbDescriptorscomparator.h"
+// #include "../map_utils_headers/descriptorsComarator.h"
 #include <chrono>
 
 int main(int argc, char **argv) {
@@ -20,21 +19,15 @@ int main(int argc, char **argv) {
         ;
     cv::CommandLineParser parser(argc, argv, keys);
     Parameters p(parser);
-    OrbDescriptorsComparator comparator(p);
-    // DescriptorsComparator comparator(p);
+    Cluster cl(p);
 
-    // std::chrono::time_point<std::chrono::system_clock> before_comp = std::chrono::system_clock::now();
-    // comparator.compareDescriptors();
-    // std::chrono::time_point<std::chrono::system_clock> after_comp = std::chrono::system_clock::now();
-    // std::cout << "compare: " << std::chrono::duration_cast<std::chrono::milliseconds>(after_comp-before_comp).count() << std::endl;
-
-    // cv::imshow("occ", second_parts_maps.at(1));
-    // cv::imshow("emp", second_parts_maps.at(2));
-    // cv::imshow("unk", second_parts_maps.at(3));
-    // cv::imshow("inv_unk", out_);
-    // cv::waitKey(0);
-
-    
+    std::chrono::time_point<std::chrono::system_clock> before_comp = std::chrono::system_clock::now();
+    std::cout << "start time: " << std::chrono::system_clock::to_time_t(before_comp) << std::endl;
+    cl.action();
+    std::chrono::time_point<std::chrono::system_clock> after_comp = std::chrono::system_clock::now();
+    std::cout << "compute time: " 
+            << std::chrono::duration_cast<std::chrono::milliseconds>(after_comp-before_comp).count()
+            << std::endl;    
 
     return 0;
 }

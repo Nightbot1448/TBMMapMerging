@@ -1,6 +1,8 @@
 #ifndef COMPARE_PARAMETRES_H
 #define COMPARE_PARAMETRES_H
 
+#include <opencv2/core.hpp>
+
 class Parameters{
 public:
     Parameters() = default;
