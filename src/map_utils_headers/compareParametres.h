@@ -17,6 +17,7 @@ public:
         test_id = parser.get<int>("test_id");
         min_dist = parser.get<float>("min_dist");
         max_dist = parser.get<float>("max_dist");
+        cluster_tolerance = parser.get<float>("cluster_tolerance");
     }
     std::string first_filename;
     std::string second_filename;
@@ -28,6 +29,7 @@ public:
     int test_id;
     float min_dist;
     float max_dist;
+    float cluster_tolerance;
 };
 
 #endif

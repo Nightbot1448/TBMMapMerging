@@ -47,7 +47,11 @@ public:
         std::vector<cv::KeyPoint> &kp_first,
         std::vector<cv::KeyPoint> &kp_second, 
         std::vector<cv::DMatch> &good_matches
-        );
+    );
+
+    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> get_keypoints_translations_clusters(
+        pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations
+    );
 
     void action();
 };
@@ -97,7 +101,9 @@ void Cluster::action() {
     cv::Mat concatinate_d_second = concatinateDescriptor(d_second_occ, d_second_emp, d_second_unk);
 
     good_matches_conc = get_good_matches(concatinate_d_first, concatinate_d_second, parameters.ratio_thresh);
-    get_translation_of_keypoints(kp_first_conc, kp_second_conc, good_matches_conc);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations =
+        get_translation_of_keypoints(kp_first_conc, kp_second_conc, good_matches_conc);    
+    get_keypoints_translations_clusters(keypoints_translations);
 
     cv::Mat img_matches_conc;
     if(parameters.test_id>=0){
@@ -106,6 +112,38 @@ void Cluster::action() {
                         std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
         cv::imshow( "conc", img_matches_conc);
         cv::waitKey();
+    }
+}
+
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> Cluster::get_keypoints_translations_clusters(pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations){
+    std::cout << "action" << std::endl;
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+    tree->setInputCloud(keypoints_translations);
+    std::cout << "tree" << std::endl;
+    
+    std::vector<pcl::PointIndices> cluster_indices;
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+    ec.setClusterTolerance(parameters.cluster_tolerance);
+    ec.setMinClusterSize(1);
+    ec.setMaxClusterSize(parameters.count_of_features);
+    ec.setSearchMethod(tree);
+    ec.setInputCloud(keypoints_translations);
+    ec.extract (cluster_indices);
+
+    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters_of_vectors;
+
+    std::cout << "count of clusters: " << cluster_indices.size() << std::endl;
+    for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
+    {
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
+        for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit){
+            cloud_cluster->points.push_back(keypoints_translations->points[*pit]); //*
+        }
+        cloud_cluster->width = cloud_cluster->points.size ();
+        cloud_cluster->height = 1;
+        cloud_cluster->is_dense = true;
+        clusters_of_vectors.push_back(cloud_cluster);
+        std::cout << "PointCloud representing the Cluster: " << cloud_cluster->points.size () << " data points." << std::endl;
     }
 }
 
@@ -129,7 +167,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr Cluster::get_translation_of_keypoints(
         }
         std::cout << "res size: " << keypoints_translations->size() << std::endl;
         for(auto &  pt: *keypoints_translations){
-            std::cout << pt.x << ' ' << pt.y << ' ' << pt.z << std::endl;
+            std::cout << pt.x << ' ' << pt.y << ' ' << pt.z << "; dist: " << sqrtf(pt.x*pt.x + pt.y*pt.y) << std::endl;
         }
     }
     catch(std::out_of_range &ex){

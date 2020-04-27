@@ -15,18 +15,14 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   roslz4
+  pcl_ros
 )
   
 find_package( OpenCV REQUIRED )
-find_package(PCL 1.10 REQUIRED)
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
 )
-
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
 
 catkin_package()
 
@@ -46,7 +42,7 @@ add_executable(test_algorythm src/test_alg/test_algorythm.cpp)
 target_link_libraries(conj_and_disj ${catkin_LIBRARIES} ${OpenCV_LIBS})
 target_link_libraries(merge_maps ${catkin_LIBRARIES} ${OpenCV_LIBS})
 target_link_libraries(comparator ${catkin_LIBRARIES} ${OpenCV_LIBS})
-target_link_libraries(test_algorythm ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBS})
+target_link_libraries(test_algorythm ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 
 set(comparator_library_files 
