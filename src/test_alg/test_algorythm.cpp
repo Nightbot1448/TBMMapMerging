@@ -22,7 +22,6 @@ int main(int argc, char **argv) {
     Cluster cl(p);
 
     std::chrono::time_point<std::chrono::system_clock> before_comp = std::chrono::system_clock::now();
-    std::cout << "start time: " << std::chrono::system_clock::to_time_t(before_comp) << std::endl;
     cl.action();
     std::chrono::time_point<std::chrono::system_clock> after_comp = std::chrono::system_clock::now();
     std::cout << "compute time: " 

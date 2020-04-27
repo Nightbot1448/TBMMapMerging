@@ -14,7 +14,7 @@ public:
         count_of_features = parser.get<size_t>("count_of_features");
         scale_factor = parser.get<float>("scale_factor");
         ratio_thresh = parser.get<float>("ratio_thresh");
-        test_id = parser.get<size_t>("test_id");
+        test_id = parser.get<int>("test_id");
         min_dist = parser.get<float>("min_dist");
         max_dist = parser.get<float>("max_dist");
     }
@@ -25,7 +25,7 @@ public:
     size_t count_of_features;
     float scale_factor;
     float ratio_thresh;
-    size_t test_id;
+    int test_id;
     float min_dist;
     float max_dist;
 };
