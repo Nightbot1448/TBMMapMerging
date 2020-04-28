@@ -18,6 +18,7 @@ public:
         min_dist = parser.get<float>("min_dist");
         max_dist = parser.get<float>("max_dist");
         cluster_tolerance = parser.get<float>("cluster_tolerance");
+        read_imgs = parser.get<bool>("read_imgs");
     }
     std::string first_filename;
     std::string second_filename;
@@ -27,6 +28,7 @@ public:
     float scale_factor;
     float ratio_thresh;
     int test_id;
+    bool read_imgs;
     float min_dist;
     float max_dist;
     float cluster_tolerance;

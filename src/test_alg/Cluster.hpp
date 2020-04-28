@@ -49,28 +49,55 @@ public:
         std::vector<cv::DMatch> &good_matches
     );
 
-    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> get_keypoints_translations_clusters(
+    std::vector<pcl::PointIndices> get_keypoints_translations_clusters(
         pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations
+    );
+
+    void print_clusters(
+        pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations, 
+        std::vector<pcl::PointIndices> cluster_indices
     );
 
     void action();
 };
 
 Cluster::Cluster(Parameters p) : parameters(p) {
-    auto gmp = MapValues::gmp;
-    first_map.reset(new UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
-    second_map.reset(new UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
-    std::ifstream in(parameters.first_filename);
-    std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
-                                std::istreambuf_iterator<char>());
-    first_map->load_state(file_content);
-    first_parts_maps = first_map->get_maps_grs_ofu();
-    
-    in = std::ifstream(parameters.second_filename);
-    file_content = std::vector<char>((std::istreambuf_iterator<char>(in)),
-                                        std::istreambuf_iterator<char>());
-    second_map->load_state(file_content);
-    second_parts_maps = second_map->get_maps_grs_ofu();
+    if(p.read_imgs) {
+    //     first_parts_maps.at(0) = cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_1_grs.jpg");
+    //     first_parts_maps.at(1) = cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_1_occ.jpg");
+    //     first_parts_maps.at(2) = cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_1_emp.jpg");
+    //     first_parts_maps.at(3) = cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_1_unk.jpg");
+        
+        auto gmp = MapValues::gmp;
+        first_map.reset(new UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
+        second_map.reset(new UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
+        std::ifstream in(parameters.first_filename);
+        std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
+                                    std::istreambuf_iterator<char>());
+        first_map->load_state(file_content);
+        first_parts_maps = first_map->get_maps_grs_ofu();
+
+        second_parts_maps.at(0) = cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_2_grs_edited.jpg");
+        second_parts_maps.at(1) = cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_2_occ_edited.jpg");
+        second_parts_maps.at(2) = cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_2_emp_edited.jpg");
+        second_parts_maps.at(3) = cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_2_unk_edited.jpg");
+    }
+    else {
+        auto gmp = MapValues::gmp;
+        first_map.reset(new UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
+        second_map.reset(new UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
+        std::ifstream in(parameters.first_filename);
+        std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
+                                    std::istreambuf_iterator<char>());
+        first_map->load_state(file_content);
+        first_parts_maps = first_map->get_maps_grs_ofu();
+        
+        in = std::ifstream(parameters.second_filename);
+        file_content = std::vector<char>((std::istreambuf_iterator<char>(in)),
+                                            std::istreambuf_iterator<char>());
+        second_map->load_state(file_content);
+        second_parts_maps = second_map->get_maps_grs_ofu();
+    }
 }
 
 void Cluster::detectAndCompute(){
@@ -103,34 +130,39 @@ void Cluster::action() {
     good_matches_conc = get_good_matches(concatinate_d_first, concatinate_d_second, parameters.ratio_thresh);
     pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations =
         get_translation_of_keypoints(kp_first_conc, kp_second_conc, good_matches_conc);    
-    get_keypoints_translations_clusters(keypoints_translations);
+    std::vector<pcl::PointIndices> cluster_indices = get_keypoints_translations_clusters(keypoints_translations);
+    
+    std::vector<cv::DMatch> matches_to_show;
+    for(std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); it++){
+        if(it->indices.size() == 1){ // dont't show clusters with only one vector translation
+            for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit){
+                std::cout << *pit << ' ';
+                matches_to_show.push_back(good_matches_conc.at(*pit));
+            }
+            std::cout << std::endl;
+        }
+    }
 
-    cv::Mat img_matches_conc;
     if(parameters.test_id>=0){
+        print_clusters(keypoints_translations, cluster_indices);
+        cv::Mat img_matches_conc;
+
         drawMatches(first_parts_maps.at(0), kp_first_conc, second_parts_maps.at(0), kp_second_conc, 
-                        good_matches_conc, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
+                        matches_to_show, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
                         std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-        cv::imshow( "conc", img_matches_conc);
-        cv::waitKey();
+
+        // drawMatches(first_parts_maps.at(0), kp_first_conc, second_parts_maps.at(0), kp_second_conc, 
+        //                 good_matches_conc, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
+        //                 std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+        while(true){
+            cv::imshow( "conc", img_matches_conc);
+            if (cv::waitKey() == 27)
+                break;
+        }
     }
 }
 
-std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> Cluster::get_keypoints_translations_clusters(pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations){
-    std::cout << "action" << std::endl;
-    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-    tree->setInputCloud(keypoints_translations);
-    std::cout << "tree" << std::endl;
-    
-    std::vector<pcl::PointIndices> cluster_indices;
-    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-    ec.setClusterTolerance(parameters.cluster_tolerance);
-    ec.setMinClusterSize(1);
-    ec.setMaxClusterSize(parameters.count_of_features);
-    ec.setSearchMethod(tree);
-    ec.setInputCloud(keypoints_translations);
-    ec.extract (cluster_indices);
-
-    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters_of_vectors;
+void Cluster::print_clusters(pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations, std::vector<pcl::PointIndices> cluster_indices){
 
     std::cout << "count of clusters: " << cluster_indices.size() << std::endl;
     for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
@@ -142,9 +174,26 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> Cluster::get_keypoints_translat
         cloud_cluster->width = cloud_cluster->points.size ();
         cloud_cluster->height = 1;
         cloud_cluster->is_dense = true;
-        clusters_of_vectors.push_back(cloud_cluster);
         std::cout << "PointCloud representing the Cluster: " << cloud_cluster->points.size () << " data points." << std::endl;
     }
+}
+
+std::vector<pcl::PointIndices> Cluster::get_keypoints_translations_clusters(pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations){
+    if (keypoints_translations->empty()){
+        return std::vector<pcl::PointIndices>();
+    }
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+    tree->setInputCloud(keypoints_translations);
+    
+    std::vector<pcl::PointIndices> cluster_indices;
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+    ec.setClusterTolerance(parameters.cluster_tolerance);
+    ec.setMinClusterSize(1);
+    ec.setMaxClusterSize(parameters.count_of_features);
+    ec.setSearchMethod(tree);
+    ec.setInputCloud(keypoints_translations);
+    ec.extract(cluster_indices);
+    return cluster_indices;
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr Cluster::get_translation_of_keypoints(
@@ -155,8 +204,6 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr Cluster::get_translation_of_keypoints(
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations(new pcl::PointCloud<pcl::PointXYZ>);
     try{
-        std::cout << "call get_translation_of_keypoints" << std::endl 
-            << "good matches size: " << good_matches.size() << std::endl;
         for(size_t match_id = 0; match_id < good_matches.size(); match_id++) {
             cv::DMatch &match = good_matches[match_id];
             keypoints_translations->push_back(
@@ -165,9 +212,11 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr Cluster::get_translation_of_keypoints(
                     kp_first[match.queryIdx].pt.x - kp_second[match.trainIdx].pt.x, 
                     0 ));
         }
-        std::cout << "res size: " << keypoints_translations->size() << std::endl;
-        for(auto &  pt: *keypoints_translations){
-            std::cout << pt.x << ' ' << pt.y << ' ' << pt.z << "; dist: " << sqrtf(pt.x*pt.x + pt.y*pt.y) << std::endl;
+        if(parameters.test_id>=0){
+            std::cout << "keypoints translation: " << keypoints_translations->size() << std::endl;
+            for(auto it = keypoints_translations->begin(); it != keypoints_translations->end(); it++){
+                std::cout << '[' << (it - keypoints_translations->begin()) << "]: " << it->x << ' ' << it->y << ' ' << it->z << "; dist: " << sqrtf(it->x*it->x + it->y*it->y) << std::endl;
+            }
         }
     }
     catch(std::out_of_range &ex){

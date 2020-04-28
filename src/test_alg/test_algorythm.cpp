@@ -15,7 +15,8 @@ int main(int argc, char **argv) {
         "{ratio_thresh         | 0.7               | filter matches using the Lowe's ratio test }"
         "{test_id              | -1                | test id }"
         "{min_dist             | 0                 | min distance between keypoints }"
-        "{cluster_tolerance    | 0.02              | cluster tolerance for EuclideanClusterExtraction }"
+        "{cluster_tolerance    | 2.5               | cluster tolerance for EuclideanClusterExtraction }"
+        "{read_imgs            | false             | read imgs instead of map }"
         "{max_dist             | 0                 | max distance between keypoints }"
         ;
     cv::CommandLineParser parser(argc, argv, keys);
