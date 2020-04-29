@@ -10,17 +10,13 @@
 #include "../core/maps/plain_grid_map.h"
 #include "../slams/viny/viny_grid_cell.h"
 
-#include <pcl/ModelCoefficients.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/extract_indices.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/features/normal_3d.h>
 #include <pcl/kdtree/kdtree.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/registration/icp.h>
+
 
 class Cluster {
 public:
@@ -57,6 +53,8 @@ public:
         pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations, 
         std::vector<pcl::PointIndices> cluster_indices
     );
+
+    void check_need_rotation(std::vector<pcl::PointIndices> &indices);
 
     void action();
 };
@@ -132,15 +130,17 @@ void Cluster::action() {
         get_translation_of_keypoints(kp_first_conc, kp_second_conc, good_matches_conc);    
     std::vector<pcl::PointIndices> cluster_indices = get_keypoints_translations_clusters(keypoints_translations);
     
+    check_need_rotation(cluster_indices);
+
     std::vector<cv::DMatch> matches_to_show;
     for(std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); it++){
-        if(it->indices.size() == 1){ // dont't show clusters with only one vector translation
-            for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit){
+        for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit){
                 std::cout << *pit << ' ';
-                matches_to_show.push_back(good_matches_conc.at(*pit));
+                if(it->indices.size() > 1){ // dont't show clusters with only one vector translation
+                    matches_to_show.push_back(good_matches_conc.at(*pit));
+                }
             }
             std::cout << std::endl;
-        }
     }
 
     if(parameters.test_id>=0){
@@ -162,8 +162,10 @@ void Cluster::action() {
     }
 }
 
-void Cluster::print_clusters(pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations, std::vector<pcl::PointIndices> cluster_indices){
-
+void Cluster::print_clusters(
+    pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations, 
+    std::vector<pcl::PointIndices> cluster_indices
+){
     std::cout << "count of clusters: " << cluster_indices.size() << std::endl;
     for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
     {
@@ -178,7 +180,9 @@ void Cluster::print_clusters(pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_trans
     }
 }
 
-std::vector<pcl::PointIndices> Cluster::get_keypoints_translations_clusters(pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations){
+std::vector<pcl::PointIndices> Cluster::get_keypoints_translations_clusters(
+    pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations
+){
     if (keypoints_translations->empty()){
         return std::vector<pcl::PointIndices>();
     }
@@ -209,7 +213,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr Cluster::get_translation_of_keypoints(
             keypoints_translations->push_back(
                 pcl::PointXYZ(
                     kp_first[match.queryIdx].pt.x - kp_second[match.trainIdx].pt.x, 
-                    kp_first[match.queryIdx].pt.x - kp_second[match.trainIdx].pt.x, 
+                    kp_first[match.queryIdx].pt.y - kp_second[match.trainIdx].pt.y, 
                     0 ));
         }
         if(parameters.test_id>=0){
@@ -223,6 +227,40 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr Cluster::get_translation_of_keypoints(
         std::cout << ex.what() << std::endl;
     }
     return keypoints_translations;
+}
+
+void Cluster::check_need_rotation(std::vector<pcl::PointIndices> &cluster_indices){
+    std::cout << "check_need_rotation" << std::endl;
+    if(cluster_indices.size()>1) {
+        pcl::PointCloud <pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud <pcl::PointXYZ>);
+        pcl::PointCloud <pcl::PointXYZ>::Ptr cloud_out(new pcl::PointCloud <pcl::PointXYZ>);
+        for (auto &index: cluster_indices.at(0).indices){
+            const cv::DMatch &match = good_matches_conc.at(index);
+            const cv::KeyPoint &kp_first = kp_first_conc.at(match.queryIdx);
+            const cv::KeyPoint &kp_second = kp_second_conc.at(match.trainIdx);
+            cloud_in->push_back(pcl::PointXYZ(kp_first.pt.x, kp_first.pt.y, 0));
+            cloud_out->push_back(pcl::PointXYZ(kp_second.pt.x, kp_second.pt.y, 0));
+        }
+
+        for(int i=0; i < cloud_in->size(); i++){
+            std::cout << cloud_in->at(i) << "; " << cloud_out->at(i) 
+                << ": (" << cloud_in->at(i).x - cloud_out->at(i).x 
+                << ',' << cloud_in->at(i).y - cloud_out->at(i).y << ')' << std::endl;
+        }
+        pcl::IterativeClosestPoint < pcl::PointXYZ, pcl::PointXYZ > icp;
+        icp.setInputSource(cloud_in);
+        icp.setInputTarget(cloud_out);
+        icp.setEuclideanFitnessEpsilon(1e-3);
+        pcl::PointCloud < pcl::PointXYZ > final_;
+        icp.align(final_);
+        std::cout << "final_" << std::endl;
+        for(int i=0; i < final_.size(); i++){
+            std::cout << final_.at(i) << std::endl;
+        }
+
+        std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
+        std::cout << icp.getFinalTransformation() << std::endl;
+    }
 }
 
 #endif //CLUSTER_HPP
