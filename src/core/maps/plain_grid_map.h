@@ -118,14 +118,18 @@ public: // methods
 		return s.result();
 	}
 
+	int inv_start = 0, inv_before_end = 0;
+
 	virtual cv::Mat convert_to_grayscale_img() const {
 		int w = width();
 		int h = height();
 		auto origin_ = origin();
-		cv::Mat_<uchar> map_img(w,h);
-		for(int i=0; i<h; i++){
+		// TODO: remove inv_start && inv_before_end
+		cv::Mat_<uchar> map_img(h-inv_start-inv_before_end,w);
+		for(int i=inv_start; i<h-inv_before_end; i++){
 			for(int j=0; j<w; j++){
-				map_img(h-i-1,j) = static_cast<uchar>((1 - operator[](Coord(j-origin_.x, i-origin_.y)).occupancy().prob_occ) * 255);
+				map_img(h-i-inv_before_end-1,j) = static_cast<uchar>(
+						(1 - operator[](Coord(j-origin_.x, i-origin_.y)).occupancy().prob_occ) * 255);
 			}   
 		}
 		return map_img;
@@ -135,7 +139,6 @@ public: // methods
 		int w = width();
 		int h = height();
 		auto origin_ = origin();
-		int inv_start = 300, inv_before_end = 200; 
 		cv::Mat_<uchar> occ_map(h-inv_start-inv_before_end,w);
 		cv::Mat_<uchar> emp_map(h-inv_start-inv_before_end,w);
 		cv::Mat_<uchar> unk_map(h-inv_start-inv_before_end,w);

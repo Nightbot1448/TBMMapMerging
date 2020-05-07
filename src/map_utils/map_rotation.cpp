@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
     
     const cv::String keys =
         "{path           |/home/dmo/Documents/diplom/dumps/compressed_dump_8.txt | path to file }"
-        "{angle           | 45   | angle in deg }";
+        "{angle          | 45   | angle in deg }";
 
     cv::CommandLineParser parser(argc, argv, keys);
     float angle = parser.get<float>("angle");
@@ -40,39 +40,23 @@ int main(int argc, char **argv) {
     cv::Mat orig_map = map.convert_to_grayscale_img();
     cv::imshow("original", orig_map);
 
-    // UnboundedPlainGridMap map_second = UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp);
-    // map_second.clone_other_map_properties(map);
+    UnboundedPlainGridMap map_second = UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp);
+    map_second.clone_other_map_properties(map);
 
-    // int width = map.width();
-    // int height = map.height();
-    // DiscretePoint2D origin = map.origin();
-    // DiscretePoint2D pnt;
-    // DiscretePoint2D end_of_map = DiscretePoint2D(width,
-    //                                              height) - origin;
+    int width = map.width();
+    int height = map.height();
+    DiscretePoint2D origin = map.origin();
+    DiscretePoint2D pnt;
+    DiscretePoint2D end_of_map = DiscretePoint2D(width,
+                                                 height) - origin;
     
-    // DiscretePoint2D zero;
-    // std::cout << -origin <<std::endl;
-    // std::cout << end_of_map <<std::endl;
-    // std::cout << zero <<std::endl;
+    DiscretePoint2D zero;
+    std::cout << -origin <<std::endl;
+    std::cout << end_of_map <<std::endl;
+    std::cout << zero <<std::endl;
     
     // std::chrono::time_point<std::chrono::system_clock> start, end;
     // start = std::chrono::system_clock::now();
-
-    // for(pnt.y = -origin.y; pnt.y < end_of_map.y; ++pnt.y) {
-    //     for (pnt.x = -origin.x; pnt.x < end_of_map.x; ++pnt.x) {
-    //         const GridCell &map_value = map[pnt];
-    //         DiscretePoint2D new_cell_pnt(pnt.x, (pnt.y + origin.y + height + shift_y )%height - origin.y );
-    //         map_second.setCell(new_cell_pnt, new VinyDSCell(dynamic_cast<const VinyDSCell &>(map_value)));
-    //     }
-    // }
-
-    // for(pnt.y = -origin.y; pnt.y < end_of_map.y; ++pnt.y) {
-    //     for (pnt.x = -origin.x; pnt.x < end_of_map.x; ++pnt.x) {
-    //         const GridCell &map_value = map_second[pnt];
-    //         DiscretePoint2D new_cell_pnt((pnt.x + origin.x + width + shift_x )%width - origin.x, pnt.y );
-    //         map.setCell(new_cell_pnt, new VinyDSCell(dynamic_cast<const VinyDSCell &>(map_value)));
-    //     }
-    // }
 
     // end = std::chrono::system_clock::now();
     // int elapsed_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>
@@ -81,7 +65,7 @@ int main(int argc, char **argv) {
     // std::cout<< "time: " << elapsed_milliseconds << std::endl;
     
     
-    // cv::imshow("changed", map.convert_to_grayscale_img());
+    cv::imshow("changed", map.convert_to_grayscale_img());
     
     int k = 0;
     while(k != 27){
