@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.12)
-project(slam_constructor)
+project(map_merging)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3 -pthread -fdiagnostics-color")
 
@@ -29,6 +29,7 @@ catkin_package()
 # add_executable(map_translation src/map_utils/map_translation.cpp)
 # add_executable(parts_of_map src/map_utils/parts_of_map.cpp)
 # add_executable(conj_and_disj src/map_utils/conj_and_disj.cpp)
+add_executable(map_rotation src/map_utils/map_rotation.cpp)
 add_executable(3_maps src/map_utils/3_maps.cpp)
 
 
@@ -36,18 +37,19 @@ add_executable(3_maps src/map_utils/3_maps.cpp)
 # target_link_libraries(map_translation ${catkin_LIBRARIES} ${OpenCV_LIBS})
 # target_link_libraries(parts_of_map ${catkin_LIBRARIES} ${OpenCV_LIBS})
 # target_link_libraries(conj_and_disj ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(map_rotation ${catkin_LIBRARIES} ${OpenCV_LIBS})
 target_link_libraries(3_maps ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
-install(
-  TARGETS
-  # load_state 
-  3_maps
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# install(
+#   TARGETS
+#   # load_state 
+#   3_maps
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
-install(
-  DIRECTORY config launch rviz
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+# install(
+#   DIRECTORY config launch rviz
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
