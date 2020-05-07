@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <cmath>
 
 #include "../map_utils_headers/compareParametres.h"
 #include "../map_utils_headers/compute_descriptors.h"
@@ -16,7 +17,6 @@
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/registration/icp.h>
-
 
 class Cluster {
 public:
@@ -145,20 +145,20 @@ void Cluster::action() {
 
     if(parameters.test_id>=0){
         print_clusters(keypoints_translations, cluster_indices);
-        cv::Mat img_matches_conc;
-
-        drawMatches(first_parts_maps.at(0), kp_first_conc, second_parts_maps.at(0), kp_second_conc, 
-                        matches_to_show, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
-                        std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+        // cv::Mat img_matches_conc;
 
         // drawMatches(first_parts_maps.at(0), kp_first_conc, second_parts_maps.at(0), kp_second_conc, 
-        //                 good_matches_conc, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
+        //                 matches_to_show, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
         //                 std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-        while(true){
-            cv::imshow( "conc", img_matches_conc);
-            if (cv::waitKey() == 27)
-                break;
-        }
+
+        // // drawMatches(first_parts_maps.at(0), kp_first_conc, second_parts_maps.at(0), kp_second_conc, 
+        // //                 good_matches_conc, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
+        // //                 std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+        // while(true){
+        //     cv::imshow( "conc", img_matches_conc);
+        //     if (cv::waitKey() == 27)
+        //         break;
+        // }
     }
 }
 
@@ -216,12 +216,6 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr Cluster::get_translation_of_keypoints(
                     kp_first[match.queryIdx].pt.y - kp_second[match.trainIdx].pt.y, 
                     0 ));
         }
-        if(parameters.test_id>=0){
-            std::cout << "keypoints translation: " << keypoints_translations->size() << std::endl;
-            for(auto it = keypoints_translations->begin(); it != keypoints_translations->end(); it++){
-                std::cout << '[' << (it - keypoints_translations->begin()) << "]: " << it->x << ' ' << it->y << ' ' << it->z << "; dist: " << sqrtf(it->x*it->x + it->y*it->y) << std::endl;
-            }
-        }
     }
     catch(std::out_of_range &ex){
         std::cout << ex.what() << std::endl;
@@ -231,35 +225,58 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr Cluster::get_translation_of_keypoints(
 
 void Cluster::check_need_rotation(std::vector<pcl::PointIndices> &cluster_indices){
     std::cout << "check_need_rotation" << std::endl;
-    if(cluster_indices.size()>1) {
-        pcl::PointCloud <pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud <pcl::PointXYZ>);
-        pcl::PointCloud <pcl::PointXYZ>::Ptr cloud_out(new pcl::PointCloud <pcl::PointXYZ>);
-        for (auto &index: cluster_indices.at(0).indices){
-            const cv::DMatch &match = good_matches_conc.at(index);
-            const cv::KeyPoint &kp_first = kp_first_conc.at(match.queryIdx);
-            const cv::KeyPoint &kp_second = kp_second_conc.at(match.trainIdx);
-            cloud_in->push_back(pcl::PointXYZ(kp_first.pt.x, kp_first.pt.y, 0));
-            cloud_out->push_back(pcl::PointXYZ(kp_second.pt.x, kp_second.pt.y, 0));
-        }
+    for(auto &cluster: cluster_indices) {
+        if(cluster.indices.size()>2) {
+            std::cout << "------------------------------" << std::endl;
+            pcl::PointCloud <pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud <pcl::PointXYZ>);
+            pcl::PointCloud <pcl::PointXYZ>::Ptr cloud_out(new pcl::PointCloud <pcl::PointXYZ>);
+            for (auto &index: cluster.indices){
+                const cv::DMatch &match = good_matches_conc.at(index);
+                const cv::KeyPoint &kp_first = kp_first_conc.at(match.queryIdx);
+                const cv::KeyPoint &kp_second = kp_second_conc.at(match.trainIdx);
+                cloud_in->push_back(pcl::PointXYZ(kp_first.pt.x, kp_first.pt.y, 0));
+                cloud_out->push_back(pcl::PointXYZ(kp_second.pt.x, kp_second.pt.y, 0));
+            }
 
-        for(int i=0; i < cloud_in->size(); i++){
-            std::cout << cloud_in->at(i) << "; " << cloud_out->at(i) 
-                << ": (" << cloud_in->at(i).x - cloud_out->at(i).x 
-                << ',' << cloud_in->at(i).y - cloud_out->at(i).y << ')' << std::endl;
-        }
-        pcl::IterativeClosestPoint < pcl::PointXYZ, pcl::PointXYZ > icp;
-        icp.setInputSource(cloud_in);
-        icp.setInputTarget(cloud_out);
-        icp.setEuclideanFitnessEpsilon(1e-3);
-        pcl::PointCloud < pcl::PointXYZ > final_;
-        icp.align(final_);
-        std::cout << "final_" << std::endl;
-        for(int i=0; i < final_.size(); i++){
-            std::cout << final_.at(i) << std::endl;
-        }
+            for(size_t i=0; i < cloud_in->size(); i++){
+                std::cout << '[' << i << "]: " << cloud_in->at(i) << "; " << cloud_out->at(i) 
+                    << ": (" << cloud_in->at(i).x - cloud_out->at(i).x 
+                    << ',' << cloud_in->at(i).y - cloud_out->at(i).y << ')' << std::endl;
+            }
+            pcl::IterativeClosestPoint < pcl::PointXYZ, pcl::PointXYZ > icp;
+            icp.setInputSource(cloud_in);
+            icp.setInputTarget(cloud_out);
+            icp.setEuclideanFitnessEpsilon(1e-3);
+            pcl::PointCloud < pcl::PointXYZ > final_;
+            icp.align(final_);
+            Eigen::Matrix4f finalTransformation = icp.getFinalTransformation();
+            // float angle = atan2(finalTransformation(1,0), finalTransformation(0,0));
+            cv::Mat transformMatrix(2,3,CV_32F);
+            transformMatrix.at<float>(0,0) = finalTransformation(0,0);
+            transformMatrix.at<float>(0,1) = finalTransformation(0,1);
+            transformMatrix.at<float>(1,0) = finalTransformation(1,0);
+            transformMatrix.at<float>(1,1) = finalTransformation(0,1);
+            
+            // transformMatrix.at<float>(0,2) = finalTransformation(0,3);
+            // transformMatrix.at<float>(1,2) = finalTransformation(1,3);
+            
 
-        std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
-        std::cout << icp.getFinalTransformation() << std::endl;
+            // cv::Mat out;
+            // cv::warpAffine(first_parts_maps.at(0), out, transformMatrix, 
+            //     cv::Size(first_parts_maps.at(0).rows, first_parts_maps.at(0).cols));
+            
+            
+            // while(true){
+            //     cv::imshow("original", first_parts_maps.at(0));
+            //     cv::imshow("warp", out);
+            //     if (cv::waitKey() == 27)
+            //         break;
+            // }
+
+            std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
+            std::cout << finalTransformation << std::endl;
+
+        }
     }
 }
 
