@@ -225,6 +225,46 @@ public: // methods
 		}
 	}
 
+	virtual void cropp_by_bounds() {
+		int min_x = width(), min_y = height(), max_x = 0, max_y = 0;
+
+		for(int row_id = 0; row_id < width(); row_id++){
+			for(int cell_id = 0; cell_id < height(); cell_id++){
+				if(_cells[row_id][cell_id]->belief().unknown() != 1.0f){
+					if (min_x > cell_id)
+						min_x = cell_id;
+					if (max_x < cell_id)
+						max_x = cell_id;
+					if (min_y > row_id)
+						min_y = row_id;
+					if (max_y < row_id)
+						max_y = row_id;
+				}
+			}
+		}
+
+		min_x = std::floor(min_x/50.0f)*50;
+		min_y = std::floor(min_y/50.0f)*50;
+		max_x = std::ceil(max_x/50.0f)*50;
+		max_y = std::ceil(max_y/50.0f)*50;
+
+		int new_width = max_x - min_x;
+		int new_height = max_y - min_y;
+		Coord new_origin(_origin.x - min_x, _origin.y - min_y);
+		for (int j=0; j<new_height; j++) {
+			for (int i = 0; i < new_width; ++i) {
+				VinyDSCell *cell = _cells[min_y + i][min_x + j].get();
+				_cells[j][i].reset(_cells[min_y+j][min_x+i].release());
+			}
+			_cells.at(j).resize(new_width);
+		}
+		_cells.resize(new_height);
+
+		set_height(new_height);
+		set_width(new_width);
+		_origin = new_origin;
+	}
+
 protected: // methods
 
 	bool ensure_inside(const Coord &c) {
