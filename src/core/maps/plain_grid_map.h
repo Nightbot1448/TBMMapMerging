@@ -228,9 +228,12 @@ public: // methods
 	virtual void cropp_by_bounds() {
 		int min_x = width(), min_y = height(), max_x = 0, max_y = 0;
 
-		for(int row_id = 0; row_id < width(); row_id++){
-			for(int cell_id = 0; cell_id < height(); cell_id++){
-				if(_cells[row_id][cell_id]->belief().unknown() != 1.0f){
+		// std::cout << "start bounds: {" << min_x << ' ' << min_y << "}; {" << max_x << ' ' << max_y << '}' << std::endl; 
+
+		for(int row_id = 0; row_id < height(); row_id++){
+			for(int cell_id = 0; cell_id < width(); cell_id++){
+				auto &cell = _cells[row_id][cell_id];
+				if(cell->belief().unknown() != 1.0f){
 					if (min_x > cell_id)
 						min_x = cell_id;
 					if (max_x < cell_id)
@@ -243,6 +246,8 @@ public: // methods
 			}
 		}
 
+		// std::cout << "result bounds: {" << min_x << ' ' << min_y << "}; {" << max_x << ' ' << max_y << '}' << std::endl; 
+
 		min_x = std::floor(min_x/50.0f)*50;
 		min_y = std::floor(min_y/50.0f)*50;
 		max_x = std::ceil(max_x/50.0f)*50;
@@ -253,7 +258,6 @@ public: // methods
 		Coord new_origin(_origin.x - min_x, _origin.y - min_y);
 		for (int j=0; j<new_height; j++) {
 			for (int i = 0; i < new_width; ++i) {
-				VinyDSCell *cell = _cells[min_y + i][min_x + j].get();
 				_cells[j][i].reset(_cells[min_y+j][min_x+i].release());
 			}
 			_cells.at(j).resize(new_width);
@@ -263,6 +267,41 @@ public: // methods
 		set_height(new_height);
 		set_width(new_width);
 		_origin = new_origin;
+	}
+
+	/*
+	 * @param angle in radian
+	 * 
+	 */
+	virtual std::shared_ptr<UnboundedPlainGridMap> rotate(double angle, DiscretePoint2D axis = {0,0}){
+		int width = this->width();
+		int height = this->height();
+		auto gmp = MapValues::gmp;
+		auto gmp_rot = GridMapParams{
+			int(std::ceil(width*std::abs(std::cos(angle)) + height*std::abs(std::sin(angle)))), 
+			int(std::ceil(width*std::abs(std::sin(angle)) + height*std::abs(std::cos(angle)))),
+			gmp.meters_per_cell};
+
+		auto rotated_map = std::make_shared<UnboundedPlainGridMap>(UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp_rot));
+		
+		double inv_sin_angle = std::sin(-angle * CV_PI / 180);
+		double inv_cos_angle = std::cos(-angle * CV_PI / 180);
+
+		DiscretePoint2D new_origin = rotated_map->origin();
+		DiscretePoint2D new_end_of_map = DiscretePoint2D(rotated_map->width(),
+													rotated_map->height()) - new_origin;
+		DiscretePoint2D pnt;
+		for(pnt.y = -new_origin.y; pnt.y < new_end_of_map.y; ++pnt.y) {
+			for (pnt.x = -new_origin.x; pnt.x < new_end_of_map.x; ++pnt.x) {
+				DiscretePoint2D cell_pnt;
+				cell_pnt.x = std::round((pnt.x-axis.x) * inv_cos_angle - (pnt.y - axis.y) * inv_sin_angle);
+				cell_pnt.y = std::round((pnt.x-axis.x) * inv_sin_angle + (pnt.y - axis.y) * inv_cos_angle);
+				cell_pnt += axis;
+				const GridCell &map_value = this->operator[](cell_pnt);
+				rotated_map->setCell(pnt, new VinyDSCell(dynamic_cast<const VinyDSCell &>(map_value)));
+			}
+		}
+		return rotated_map;
 	}
 
 protected: // methods
