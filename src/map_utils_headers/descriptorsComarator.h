@@ -96,8 +96,11 @@ void DescriptorsComparator::detectAndComputeSURF() {
 }
 
 void DescriptorsComparator::conc_and_good_matches(Algorythm &alg){
-    cv::Mat conc_first = concatinateDescriptor(alg.d_occ_first,alg.d_emp_first,alg.d_unk_first);
-    cv::Mat conc_second = concatinateDescriptor(alg.d_occ_second,alg.d_emp_second,alg.d_unk_second);
+    cv::Mat conc_first = concatenateDescriptor(alg.d_occ_first, alg.d_emp_first,
+                                               alg.d_unk_first);
+    cv::Mat conc_second = concatenateDescriptor(alg.d_occ_second,
+                                                alg.d_emp_second,
+                                                alg.d_unk_second);
     alg.good_matches = get_good_matches(conc_first, conc_second, parameters.ratio_thresh);
     bool res = good_distance_vector_size(alg);
     if (res)
@@ -141,7 +144,9 @@ bool DescriptorsComparator::good_distance_vector_size(Algorythm &alg){
     try{
         for(size_t match_id = 0; match_id < alg.good_matches.size(); match_id++){
             cv::DMatch &match = alg.good_matches[match_id];
-            distances.push_back(Euclud_distance(alg.kp_first.at(match.queryIdx),alg.kp_second.at(match.trainIdx)));
+            distances.push_back(Euclid_distance(alg.kp_first.at(match.queryIdx),
+                                                alg.kp_second.at(
+                                                        match.trainIdx)));
         }
 
         std::vector<double> mean, stdDev;

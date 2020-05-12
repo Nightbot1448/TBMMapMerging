@@ -11,6 +11,10 @@
 #include "../core/maps/plain_grid_map.h"
 #include "../slams/viny/viny_grid_cell.h"
 
+#include "icp.h"
+
+#include <opencv2/video/tracking.hpp>
+
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/extract_indices.h>
@@ -46,16 +50,17 @@ public:
     );
 
     std::vector<pcl::PointIndices> get_keypoints_translations_clusters(
-        pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr& keypoints_translations
     );
 
     void print_clusters(
-        pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations, 
-        std::vector<pcl::PointIndices> cluster_indices
+        const pcl::PointCloud<pcl::PointXYZ>::Ptr& keypoints_translations,
+        const std::vector<pcl::PointIndices>& cluster_indices
     );
 
     void check_need_rotation(std::vector<pcl::PointIndices> &indices);
-
+    void check_need_rotation_v2(std::vector<pcl::PointIndices> &cluster_indices);
+    void check_need_rotation_v3(std::vector<pcl::PointIndices> &cluster_indices);
     void action();
 };
 
@@ -67,8 +72,8 @@ Cluster::Cluster(Parameters p) : parameters(p) {
     //     first_parts_maps.at(3) = cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_1_unk.jpg");
         
         auto gmp = MapValues::gmp;
-        first_map.reset(new UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
-        second_map.reset(new UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
+        first_map = std::make_unique<UnboundedPlainGridMap>(std::make_shared<VinyDSCell>(), gmp);
+        second_map = std::make_unique<UnboundedPlainGridMap>(std::make_shared<VinyDSCell>(), gmp);
         std::ifstream in(parameters.first_filename);
         std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
                                     std::istreambuf_iterator<char>());
@@ -82,19 +87,20 @@ Cluster::Cluster(Parameters p) : parameters(p) {
     }
     else {
         auto gmp = MapValues::gmp;
-        first_map.reset(new UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
-        second_map.reset(new UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
+        first_map = std::make_unique<UnboundedPlainGridMap>(std::make_shared<VinyDSCell>(), gmp);
+        second_map = std::make_unique<UnboundedPlainGridMap>(std::make_shared<VinyDSCell>(), gmp);
         std::ifstream in(parameters.first_filename);
         std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
                                     std::istreambuf_iterator<char>());
         first_map->load_state(file_content);
         first_parts_maps = first_map->get_maps_grs_ofu();
-        
+        in.close();
         in = std::ifstream(parameters.second_filename);
         file_content = std::vector<char>((std::istreambuf_iterator<char>(in)),
                                             std::istreambuf_iterator<char>());
         second_map->load_state(file_content);
         second_parts_maps = second_map->get_maps_grs_ofu();
+        in.close();
     }
 }
 
@@ -122,21 +128,25 @@ void Cluster::action() {
     detectAndCompute();
     good_matches_prob = get_good_matches(d_first_prob, d_second_prob, parameters.ratio_thresh);
     
-    cv::Mat concatinate_d_first = concatinateDescriptor(d_first_occ, d_first_emp, d_first_unk);
-    cv::Mat concatinate_d_second = concatinateDescriptor(d_second_occ, d_second_emp, d_second_unk);
+    cv::Mat concatinate_d_first = concatenateDescriptor(d_first_occ,
+                                                        d_first_emp,
+                                                        d_first_unk);
+    cv::Mat concatinate_d_second = concatenateDescriptor(d_second_occ,
+                                                         d_second_emp,
+                                                         d_second_unk);
 
     good_matches_conc = get_good_matches(concatinate_d_first, concatinate_d_second, parameters.ratio_thresh);
     pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations =
         get_translation_of_keypoints(kp_first_conc, kp_second_conc, good_matches_conc);    
     std::vector<pcl::PointIndices> cluster_indices = get_keypoints_translations_clusters(keypoints_translations);
     
-    check_need_rotation(cluster_indices);
-
+    // check_need_rotation(cluster_indices);
+    check_need_rotation_v3(cluster_indices);
     std::vector<cv::DMatch> matches_to_show;
-    for(std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); it++){
-        for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit){
+    for(const auto & cluster_indice : cluster_indices){
+        for (auto pit = cluster_indice.indices.begin (); pit != cluster_indice.indices.end (); ++pit){
                 std::cout << *pit << ' ';
-                if(it->indices.size() > 1){ // dont't show clusters with only one vector translation
+                if(cluster_indice.indices.size() > 1){ // dont't show clusters with only one vector translation
                     matches_to_show.push_back(good_matches_conc.at(*pit));
                 }
             }
@@ -145,33 +155,45 @@ void Cluster::action() {
 
     if(parameters.test_id>=0){
         print_clusters(keypoints_translations, cluster_indices);
-        // cv::Mat img_matches_conc;
+        cv::Mat img_matches_conc;
+
+        drawMatches(first_parts_maps.at(0), kp_first_conc, second_parts_maps.at(0), kp_second_conc, 
+                        matches_to_show, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
+                        std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
         // drawMatches(first_parts_maps.at(0), kp_first_conc, second_parts_maps.at(0), kp_second_conc, 
-        //                 matches_to_show, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
+        //                 good_matches_conc, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
         //                 std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-
-        // // drawMatches(first_parts_maps.at(0), kp_first_conc, second_parts_maps.at(0), kp_second_conc, 
-        // //                 good_matches_conc, img_matches_conc, cv::Scalar(0,255,0,0), cv::Scalar(255,0,0,0), 
-        // //                 std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-        // while(true){
-        //     cv::imshow( "conc", img_matches_conc);
-        //     if (cv::waitKey() == 27)
-        //         break;
-        // }
+        
+        // double alpha = 0.5; 
+        // double beta = 1 - alpha;
+        // cv::Mat result_merging;
+        // cv::Mat out1 = cv::Mat::zeros(1020,1440,first_parts_maps.at(0).type());
+        // cv::Mat out2 = cv::Mat::zeros(1020,1440,first_parts_maps.at(0).type());        
+        // first_parts_maps.at(0).copyTo(out1(cv::Rect(200,14,1000,1000)));
+        // auto roi = cv::Rect(0,0,1440,1000);
+        // second_parts_maps.at(0).copyTo(out2(roi));
+        // cv::addWeighted(out1, alpha, out2, beta, 0.0, result_merging);
+        
+        while(true){
+            cv::imshow( "conc", img_matches_conc);
+            // cv::imshow("merged", result_merging);
+            if (cv::waitKey() == 27)
+                break;
+        }
     }
 }
 
 void Cluster::print_clusters(
-    pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations, 
-    std::vector<pcl::PointIndices> cluster_indices
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& keypoints_translations,
+    const std::vector<pcl::PointIndices>& cluster_indices
 ){
     std::cout << "count of clusters: " << cluster_indices.size() << std::endl;
-    for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
+    for (const auto & cluster_index : cluster_indices)
     {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
-        for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit){
-            cloud_cluster->points.push_back(keypoints_translations->points[*pit]); //*
+        for (int index : cluster_index.indices){
+            cloud_cluster->points.push_back(keypoints_translations->points[index]);
         }
         cloud_cluster->width = cloud_cluster->points.size ();
         cloud_cluster->height = 1;
@@ -181,7 +203,7 @@ void Cluster::print_clusters(
 }
 
 std::vector<pcl::PointIndices> Cluster::get_keypoints_translations_clusters(
-    pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& keypoints_translations
 ){
     if (keypoints_translations->empty()){
         return std::vector<pcl::PointIndices>();
@@ -208,8 +230,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr Cluster::get_translation_of_keypoints(
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations(new pcl::PointCloud<pcl::PointXYZ>);
     try{
-        for(size_t match_id = 0; match_id < good_matches.size(); match_id++) {
-            cv::DMatch &match = good_matches[match_id];
+        for(auto & match : good_matches) {
             keypoints_translations->push_back(
                 pcl::PointXYZ(
                     kp_first[match.queryIdx].pt.x - kp_second[match.trainIdx].pt.x, 
@@ -280,4 +301,88 @@ void Cluster::check_need_rotation(std::vector<pcl::PointIndices> &cluster_indice
     }
 }
 
+void Cluster::check_need_rotation_v2(std::vector<pcl::PointIndices> &cluster_indices){
+    std::cout << "----------------------------------------------------" << std::endl;
+    std::cout << "----------------------------------------------------" << std::endl;
+    std::cout << "----------------------------------------------------" << std::endl;
+    std::cout << "check_need_rotation v2" << std::endl;
+    for(auto &cluster: cluster_indices) {
+        if(cluster.indices.size()>2) {
+            std::cout << "------------------------------" << std::endl;
+            Eigen::MatrixXd cloud_first = Eigen::MatrixXd::Zero(cluster.indices.size(), 3);
+            Eigen::MatrixXd cloud_second = Eigen::MatrixXd::Zero(cluster.indices.size(), 3);
+            auto &indices = cluster.indices;
+            for(size_t i=0; i < indices.size(); i++) {
+                const cv::DMatch &match = good_matches_conc.at(indices.at(i));
+                const cv::KeyPoint &kp_first = kp_first_conc.at(match.queryIdx);
+                const cv::KeyPoint &kp_second = kp_second_conc.at(match.trainIdx);
+                cloud_first.block<1,3>(i,0) = Eigen::Vector3d(kp_first.pt.x, kp_first.pt.y, 0);
+                cloud_second.block<1,3>(i,0) = Eigen::Vector3d(kp_second.pt.x, kp_second.pt.y, 0);
+                std::cout << '[' << i << "]: " << cloud_first.row(i) << "; " << cloud_second.row(i) 
+                    << ": (" << cloud_first.row(i) - cloud_second.row(i) << ')' << std::endl;
+            }
+            // for (auto &index: cluster.indices){
+            //     const cv::DMatch &match = good_matches_conc.at(index);
+            //     const cv::KeyPoint &kp_first = kp_first_conc.at(match.queryIdx);
+            //     const cv::KeyPoint &kp_second = kp_second_conc.at(match.trainIdx);
+            //     cloud_first.block<1,3>(jj,0) = Eigen::Vector3d(kp_first.pt.x, kp_first.pt.y, 0);
+            //     cloud_second.block<1,3>(jj,0) = Eigen::Vector3d(kp_second.pt.x, kp_second.pt.y, 0);
+            //     std::cout << '[' << jj << "]: " << cloud_first.row(jj) << "; " << cloud_second.row(jj) 
+            //         << ": (" << cloud_first.row(jj) - cloud_second.row(jj) << ')' << std::endl;
+            //     jj++;
+            // }
+            ICP_OUT icp_result = icp(cloud_second, cloud_first, 20,  0.000001);
+
+            std::cout << icp_result.trans << std::endl;
+        }
+    }
+}
+
+
+void Cluster::check_need_rotation_v3(std::vector<pcl::PointIndices> &cluster_indices){
+    std::vector<cv::Mat> imgs;
+    double alpha = 0.5;
+    double beta = 1 - alpha;
+    for(auto &cluster: cluster_indices) {
+        if(cluster.indices.size()>2) {
+            std::cout << "------------------------------" << std::endl;
+            std::vector<cv::Point2f> first, second;
+            for (auto &index: cluster.indices){
+                const cv::DMatch &match = good_matches_conc.at(index);
+                const cv::Point2f &kp_first = kp_first_conc.at(match.queryIdx).pt;
+                const cv::Point2f &kp_second = kp_second_conc.at(match.trainIdx).pt;
+                std::cout << kp_first << ": " << kp_second << std::endl;
+                first.push_back(kp_first);
+                second.push_back(kp_second);
+            }
+            cv::Mat transform = cv::estimateRigidTransform(first, second, true);
+
+            if(transform.size[0] != 0) {
+                cv::Size max_sz(std::max(first_parts_maps.at(0).rows, second_parts_maps.at(0).rows), std::max(first_parts_maps.at(0).cols, second_parts_maps.at(0).cols));
+                std::cout << "max: " << max_sz << "; " << max_sz.width << ' ' << max_sz.height << std::endl;
+                cv::Mat out(max_sz.width, max_sz.height, first_parts_maps.at(0).type());
+                cv::warpAffine(first_parts_maps.at(0), out, transform, out.size());
+                cv::Mat out1 = cv::Mat::zeros(max_sz.width,max_sz.height,first_parts_maps.at(0).type());
+                cv::Mat out2 = cv::Mat::zeros(max_sz.width,max_sz.height,first_parts_maps.at(0).type());
+                std::cout << "sizes: " <<  out1.size << ' ' << out2.size << std::endl;
+                out.copyTo(out1(cv::Rect(0,0,out.cols,out.rows)));
+                auto roi = cv::Rect(0,0,second_parts_maps.at(0).cols,second_parts_maps.at(0).rows);
+                second_parts_maps.at(0).copyTo(out2(roi));
+                cv::Mat result_merging;
+                std::cout << "sizes1: " <<  out1.size << ' ' << out2.size << std::endl;
+                cv::addWeighted(out1, alpha, out2, beta, 0.0, result_merging);
+                imgs.push_back(result_merging);
+            }
+            std::cout << transform << std::endl;
+        }
+    }
+    int k=0;
+    std::cout << "imgs size: " << imgs.size() << std::endl;
+    while(k != 27) {
+        for (size_t id = 0; id < imgs.size(); id++) {
+            cv::imshow(std::string("img") + std::to_string(id), imgs.at(id));
+        }
+        k = cv::waitKey();
+    }
+}
 #endif //CLUSTER_HPP

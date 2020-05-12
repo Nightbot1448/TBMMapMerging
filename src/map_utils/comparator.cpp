@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
         "{min_dist             | 0                 | min distance between keypoints }"
         "{max_dist             | 0                 | max distance between keypoints }"
         "{cluster_tolerance    | 0.02              | cluster tolerance for EuclideanClusterExtraction }"
+        "{read_imgs            | false             | read maps or imgs }"
         ;
     cv::CommandLineParser parser(argc, argv, keys);
     Parameters p(parser);

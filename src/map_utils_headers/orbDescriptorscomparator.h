@@ -81,8 +81,12 @@ void OrbDescriptorsComparator::compareDescriptors() {
     
     good_matches_prob = get_good_matches(d_first_prob, d_second_prob, parameters.ratio_thresh);
     
-    cv::Mat concatinate_d_first = concatinateDescriptor(d_first_occ, d_first_emp, d_first_unk);
-    cv::Mat concatinate_d_second = concatinateDescriptor(d_second_occ, d_second_emp, d_second_unk);
+    cv::Mat concatinate_d_first = concatenateDescriptor(d_first_occ,
+                                                        d_first_emp,
+                                                        d_first_unk);
+    cv::Mat concatinate_d_second = concatenateDescriptor(d_second_occ,
+                                                         d_second_emp,
+                                                         d_second_unk);
     
     // cv::Mat land_d_first = landDescriptor(d_first_occ, d_first_emp, d_first_unk);
     // cv::Mat land_d_second = landDescriptor(d_second_occ, d_second_emp, d_second_unk);
@@ -202,7 +206,8 @@ bool OrbDescriptorsComparator::good_distance_vec_size(
     try{
         for(size_t match_id = 0; match_id < good_matches.size(); match_id++){
             cv::DMatch &match = good_matches[match_id];
-            distance.push_back(Euclud_distance(kp_first.at(match.queryIdx),kp_second.at(match.trainIdx)));
+            distance.push_back(Euclid_distance(kp_first.at(match.queryIdx),
+                                               kp_second.at(match.trainIdx)));
         }
     }
     catch(std::out_of_range &ex){

@@ -33,7 +33,7 @@ catkin_package()
 add_executable(conj_and_disj src/map_utils/conj_and_disj.cpp)
 add_executable(merge_maps src/map_utils/merge_maps.cpp)
 add_executable(comparator src/map_utils/comparator.cpp)
-add_executable(test_algorythm src/test_alg/test_algorythm.cpp)
+add_executable(test_algorythm src/test_alg/test_algorythm.cpp src/test_alg/icp.cpp)
 
 
 # target_link_libraries(load_state ${catkin_LIBRARIES} ${OpenCV_LIBS})
@@ -43,15 +43,6 @@ target_link_libraries(conj_and_disj ${catkin_LIBRARIES} ${OpenCV_LIBS})
 target_link_libraries(merge_maps ${catkin_LIBRARIES} ${OpenCV_LIBS})
 target_link_libraries(comparator ${catkin_LIBRARIES} ${OpenCV_LIBS})
 target_link_libraries(test_algorythm ${catkin_LIBRARIES} ${OpenCV_LIBS})
-
-
-set(comparator_library_files 
-  src/map_utils/for_lib.cpp
-  src/map_utils_headers/compareParametres.h
-  src/map_utils_headers/compute_descriptors.h
-  src/map_utils_headers/descriptorsComarator.h
-  src/map_utils_headers/orbDescriptorscomparator.h
-)
 
 # SET_TARGET_PROPERTIES(comparator_library PROPERTIES LINKER_LANGUAGE C++)
 # add_library(comparator_library STATIC src/map_utils_headers ${comparator_library_files}

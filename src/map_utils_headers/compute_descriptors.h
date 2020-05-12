@@ -50,12 +50,14 @@ struct _thread_change_descriptor_return {
 
 std::vector<cv::DMatch> get_good_matches(cv::Mat &first_descriptor, cv::Mat &second_descriptor, float ratio_thresh) 
 {
-    cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::BRUTEFORCE);
-
+//     cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::BRUTEFORCE);
+    cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::BRUTEFORCE_L1);
+//    cv::FlannBasedMatcher matcher_ = cv::FlannBasedMatcher(cv::makePtr<cv::flann::LshIndexParams>(12, 20, 2));
     std::vector<std::vector<cv::DMatch>> knn_matches;
 
     try{
-        matcher->knnMatch( first_descriptor, second_descriptor, knn_matches, 2 );
+         matcher->knnMatch( first_descriptor, second_descriptor, knn_matches, 2 );
+//        matcher_.knnMatch(first_descriptor, second_descriptor, knn_matches, 2);
     }
     catch(cv::Exception &e){
         std::cout << e.what() << std::endl;
@@ -71,11 +73,11 @@ std::vector<cv::DMatch> get_good_matches(cv::Mat &first_descriptor, cv::Mat &sec
     return good_matches;
 }
 
-double Euclud_distance(cv::KeyPoint &f, cv::KeyPoint &s){
+double Euclid_distance(cv::KeyPoint &f, cv::KeyPoint &s){
     return std::sqrt(std::pow(f.pt.x-s.pt.x,2)+std::pow(f.pt.y-s.pt.y,2));
 }
 
-cv::Mat concatinateDescriptor(cv::Mat &d_occ, cv::Mat &d_emp, cv::Mat &d_unk)
+cv::Mat concatenateDescriptor(cv::Mat &d_occ, cv::Mat &d_emp, cv::Mat &d_unk)
 {
     size_t rows = static_cast<size_t>(d_occ.size[0]);
     size_t cols = static_cast<size_t>(d_occ.size[1]);
@@ -91,8 +93,12 @@ cv::Mat concatinateDescriptor(cv::Mat &d_occ, cv::Mat &d_emp, cv::Mat &d_unk)
 
 _thread_change_descriptor_return new_descriptors_concatinate(_thread_change_descriptor info)
 {
-    cv::Mat new_d_first = concatinateDescriptor(info.d_first_occ, info.d_first_emp, info.d_first_unk);
-    cv::Mat new_d_second = concatinateDescriptor(info.d_second_occ, info.d_second_emp, info.d_second_unk);
+    cv::Mat new_d_first = concatenateDescriptor(info.d_first_occ,
+                                                info.d_first_emp,
+                                                info.d_first_unk);
+    cv::Mat new_d_second = concatenateDescriptor(info.d_second_occ,
+                                                 info.d_second_emp,
+                                                 info.d_second_unk);
     auto good_matches = get_good_matches( new_d_first, new_d_second, info.ratio_thresh );
     return _thread_change_descriptor_return(new_d_first, new_d_second, good_matches);
 }

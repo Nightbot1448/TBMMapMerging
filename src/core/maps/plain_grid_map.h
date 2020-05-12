@@ -118,11 +118,14 @@ public: // methods
 		return s.result();
 	}
 
+private:
+	int inv_start = 300, inv_before_end = 200;
+public:
 	virtual cv::Mat convert_to_grayscale_img() const {
 		int w = width();
 		int h = height();
 		auto origin_ = origin();
-		int inv_start = 300, inv_before_end = 200; 
+		
 		cv::Mat_<uchar> map_img(h-inv_start-inv_before_end,w);
 		for(int i=inv_start; i<h-inv_before_end; i++){
 			for(int j=0; j<w; j++){
@@ -137,7 +140,6 @@ public: // methods
 		int w = width();
 		int h = height();
 		auto origin_ = origin();
-		int inv_start = 300, inv_before_end = 200; 
 		cv::Mat_<uchar> occ_map(h-inv_start-inv_before_end,w);
 		cv::Mat_<uchar> emp_map(h-inv_start-inv_before_end,w);
 		cv::Mat_<uchar> unk_map(h-inv_start-inv_before_end,w);
