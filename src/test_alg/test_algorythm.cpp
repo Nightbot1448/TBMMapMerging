@@ -23,12 +23,12 @@ int main(int argc, char **argv) {
     Parameters p(parser);
     Cluster cl(p);
 
-    std::chrono::time_point<std::chrono::system_clock> before_comp = std::chrono::system_clock::now();
-//    cl.action();
-    std::chrono::time_point<std::chrono::system_clock> after_comp = std::chrono::system_clock::now();
-    std::cout << "compute time: " 
-            << std::chrono::duration_cast<std::chrono::milliseconds>(after_comp-before_comp).count()
-            << std::endl;    
+//    std::chrono::time_point<std::chrono::system_clock> before_comp = std::chrono::system_clock::now();
+    cl.action();
+//    std::chrono::time_point<std::chrono::system_clock> after_comp = std::chrono::system_clock::now();
+//    std::cout << "compute time: "
+//            << std::chrono::duration_cast<std::chrono::milliseconds>(after_comp-before_comp).count()
+//            << std::endl;
 
     return 0;
 }

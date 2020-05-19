@@ -127,7 +127,7 @@ public:
 		cv::Mat_<uchar> map_img(h,w);
 		for(int i=0; i<h; i++){
 			for(int j=0; j<w; j++){
-				map_img(h-i-1,j) = static_cast<uchar>(
+				map_img(i,j) = static_cast<uchar>(
 						(1 - operator[](Coord(j-origin_.x, i-origin_.y)).occupancy().prob_occ) * 255);
 			}   
 		}
@@ -145,10 +145,10 @@ public:
 		for(int i=0; i<h; i++){
 			for(int j=0; j<w; j++){
 				auto cell_belief = operator[](Coord(j-origin_.x, i-origin_.y)).belief();
-				occ_map(h - i - 1, j) = static_cast<uchar>(cell_belief.occupied() * 255);
-				emp_map(h - i - 1, j) = static_cast<uchar>(cell_belief.empty() * 255);
+				occ_map(i, j) = static_cast<uchar>(cell_belief.occupied() * 255);
+				emp_map(i, j) = static_cast<uchar>(cell_belief.empty() * 255);
 				// HACK: inversed unknown map
-				unk_map(h - i - 1, j) = static_cast<uchar>((1-cell_belief.unknown()) * 255);
+				unk_map(i, j) = static_cast<uchar>((1-cell_belief.unknown()) * 255);
 			}
 		}
 		
@@ -239,8 +239,6 @@ public:
 
 	virtual void crop_by_bounds() {
 		int min_x = width(), min_y = height(), max_x = 0, max_y = 0;
-
-		// std::cout << "start bounds: {" << min_x << ' ' << min_y << "}; {" << max_x << ' ' << max_y << '}' << std::endl; 
 
 		for(int row_id = 0; row_id < height(); row_id++){
 			for(int cell_id = 0; cell_id < width(); cell_id++){
@@ -379,26 +377,24 @@ public:
     virtual std::shared_ptr<UnboundedPlainGridMap> apply_transform(const cv::Mat &transform, DiscretePoint2D &changed_size){
         std::cout << "transform" << std::endl << transform << std::endl;
         auto gmp = MapValues::gmp;
-        auto gmp_mod = GridMapParams{width(), height(), gmp.meters_per_cell};
+        auto new_bounds = get_transformed_bounds(transform);
+        auto gmp_mod = GridMapParams{new_bounds.at(2)-new_bounds.at(0), new_bounds.at(3)-new_bounds.at(1), gmp.meters_per_cell};
         auto transformed_map = std::make_shared<UnboundedPlainGridMap>(UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp_mod));
-        transformed_map->_origin = this->_origin;
-        DiscretePoint2D end_of_map = DiscretePoint2D(width(), height()) - _origin;
+        transformed_map->_origin = this->_origin+DiscretePoint2D(new_bounds.at(0), new_bounds.at(1));
         std::cout << "origin: " << transformed_map->origin() << std::endl;
         std::cout << "old sz: " << transformed_map->width() << ' ' << transformed_map->height() << std::endl;
-        std::cout << "end of map: " << end_of_map << std::endl;
-        DiscretePoint2D end_of_map_ = end_of_map - DiscretePoint2D(1,1);
+        DiscretePoint2D inv_transformed_origin = -transformed_map->_origin;
         DiscretePoint2D pnt;
 //        cv::Mat inverted_transform;
 //        cv::invertAffineTransform(transform, inverted_transform);
-        for(pnt.y = -_origin.y; pnt.y < end_of_map.y; ++pnt.y) {
-            for (pnt.x = -_origin.x; pnt.x < end_of_map.x; ++pnt.x) {
+        for(pnt.y = 0; pnt.y < height(); ++pnt.y) {
+            for (pnt.x = 0; pnt.x < width(); ++pnt.x) {
                 cv::Mat point{(double)pnt.x,(double)pnt.y,1.0};
                 cv::Mat base_pt = transform * point;
-                DiscretePoint2D cell_pnt((int)base_pt.at<double>(0), (int)base_pt.at<double>(1));
-                if (pnt == -_origin || pnt == end_of_map_){
-                    std::cout << "one of old bounds: " << cell_pnt << std::endl;
-                }
-                const VinyDSCell &map_value = this->operator[](pnt);
+                DiscretePoint2D cell_pnt((int)std::round(base_pt.at<double>(0)),
+                        (int)std::round(base_pt.at<double>(1)));
+                cell_pnt += inv_transformed_origin;
+                const VinyDSCell &map_value = this->operator[](pnt-_origin);
                 transformed_map->setCell(cell_pnt, new VinyDSCell(map_value));
             }
         }
@@ -412,33 +408,54 @@ public:
         DiscretePoint2D pnt;
         std::cout << "this sz & origin: {" << this->width() << ' ' << this->height() << "}; " << this->_origin << std::endl;
         std::cout << "other sz & origin: {" << other->width() << ' ' << other->height() << "}; " << other->_origin << std::endl;
-        DiscretePoint2D end_of_map = DiscretePoint2D(width(), height()) - _origin;
+        std::pair<int,int> width_minmax = std::minmax(this->width(), other->width());
+        std::pair<int,int> height_minmax = std::minmax(this->height(), other->height());
         auto gmp = MapValues::gmp;
-        auto merged_map = std::make_shared<UnboundedPlainGridMap>(UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp));
-        for (pnt.y = -_origin.y; pnt.y < end_of_map.y; ++pnt.y) {
-            for (pnt.x = -_origin.x; pnt.x < end_of_map.x; ++pnt.x) {
-                const TBM &el0 = dynamic_cast<const VinyDSCell &>(this->operator[](pnt)).belief();
-                const TBM &el1 = dynamic_cast<const VinyDSCell &>(other->operator[](pnt)).belief();
+        auto merged_gmp = GridMapParams{width_minmax.second, height_minmax.second, gmp.meters_per_cell};
+        auto merged_map = std::make_shared<UnboundedPlainGridMap>(UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), merged_gmp));
+        merged_map->set_width(width_minmax.second);
+        merged_map->set_height(height_minmax.second);
+        merged_map->_origin = DiscretePoint2D(width_minmax.second/2, height_minmax.second/2);
+        std::cout << "merged sz & origin: {" << merged_map->width() << ' ' << merged_map->height() << "}; " << merged_map->_origin << std::endl;
+//        DiscretePoint2D merged_origin = merged_map->_origin;
+        for (pnt.y = 0; pnt.y < height_minmax.first; ++pnt.y) {
+            for (pnt.x = 0; pnt.x < width_minmax.first; ++pnt.x) {
+//                std::cout << pnt.x << std::endl;
+                const TBM &el0 = this->_cells[pnt.y][pnt.x]->belief();
+                const TBM &el1 = other->_cells[pnt.y][pnt.x]->belief();
                 TBM res = disjunctive(el0,el1);
                 Occupancy occ = TBM_to_O(res);
-                merged_map->setCell(pnt, new VinyDSCell(occ, res));
+                merged_map->_cells[pnt.y][pnt.x].reset(new VinyDSCell(occ, res));
             }
         }
+//        std::cout << std::endl;
         return merged_map;
 	}
 
 private:
     std::vector<int> get_transformed_bounds(const cv::Mat &transform){
         std::vector<cv::Mat> bounds;
-        bounds.push_back(cv::Mat{(double)-_origin.x,(double)-_origin.y,1.0});
-        bounds.push_back(cv::Mat{(double)-_origin.x,(double)(height()-_origin.y),1.0});
-        bounds.push_back(cv::Mat{(double)(width()-_origin.x),(double)-_origin.y,1.0});
-        bounds.push_back(cv::Mat{(double)(width()-_origin.x),(double)(height()-_origin.y),1.0});
+        double width_ = static_cast<double>(width());
+        double height_ = static_cast<double>(height());
+        cv::Mat mat(3,1,CV_64F);
+        std::vector<double> data_{0, 0, 1};
+        std::memcpy(mat.data, data_.data(), data_.size()*sizeof(double));
+        bounds.push_back(mat.clone());
+        data_ = std::vector<double>{0, height_, 1};
+        std::memcpy(mat.data, data_.data(), data_.size()*sizeof(double));
+        bounds.push_back(mat.clone());
+        data_ = std::vector<double>{width_, 0, 1};
+        std::memcpy(mat.data, data_.data(), data_.size()*sizeof(double));
+        bounds.push_back(mat.clone());
+        data_ = std::vector<double>{width_, height_, 1};
+        std::memcpy(mat.data, data_.data(), data_.size()*sizeof(double));
+        bounds.push_back(mat);
         std::vector<cv::Mat> new_bounds;
-        std::cout << "points: "<< std::endl;
+//        std::cout << "points: "<< std::endl;
         for(auto &point: bounds){
             new_bounds.push_back(transform * point);
-            std::cout << new_bounds.back() << std::endl;
+//            std::cout << "{" << point.at<double>(0) << ", " << point.at<double>(1) << "} -> {"
+//                    << new_bounds.back().at<double>(0) << ", " << new_bounds.back().at<double>(1) << "}" << std::endl;
         }
         double max_x=0, min_x=0, max_y=0, min_y=0;
         for(auto &point: new_bounds){
@@ -453,7 +470,8 @@ private:
             if(y < min_y)
                 min_y = y;
         }
-        return std::vector<int>{(int)std::round(min_x), (int)std::round(min_y), (int)std::round(max_x), (int)std::round(max_y)};
+        return std::vector<int>{static_cast<int>(std::floor(min_x/50.0)*50), static_cast<int>(std::floor(min_y/50.)*50),
+                                static_cast<int>(std::ceil(max_x/50.)*50), static_cast<int>(std::ceil(max_y/50.)*50)};
 	}
 
 protected: // methods

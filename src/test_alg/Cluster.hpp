@@ -104,15 +104,14 @@ Cluster::Cluster(const Parameters& p) : parameters(p) {
 
         first_map->crop_by_bounds();
         first_parts_maps = first_map->get_maps_grs_ofu();
-        cv::imshow("first map", first_parts_maps.at(0));
-        cv::imshow("first map 1", first_parts_maps.at(1));
-        cv::waitKey();
         in.close();
         in = std::ifstream(parameters.second_filename);
         file_content = std::vector<char>((std::istreambuf_iterator<char>(in)),
                                             std::istreambuf_iterator<char>());
         second_map->load_state(file_content);
         second_map->crop_by_bounds();
+        std::cout << "first map: {" << first_map->width() << ' ' << first_map->height() << "}; " << first_map->origin() << std::endl;
+        std::cout << "second map: {" << second_map->width() << ' ' << second_map->height() << "}; " << second_map->origin() << std::endl;
         second_parts_maps = second_map->get_maps_grs_ofu();
         in.close();
     }
@@ -173,8 +172,7 @@ void Cluster::detectAndCompute(){
 
 void Cluster::action() {
     detectAndCompute();
-//    good_matches_prob = get_good_matches(d_first_prob, d_second_prob, parameters.ratio_thresh);
-    
+
     cv::Mat concatenate_d_first = concatenateDescriptor(d_first_occ,
                                                         d_first_emp,
                                                         d_first_unk);
@@ -191,16 +189,16 @@ void Cluster::action() {
                 get_translation_of_keypoints(kp_first_conc, kp_second_conc, good_matches_conc);
         std::vector<pcl::PointIndices> clusters_indices = get_keypoints_translations_clusters(keypoints_translations);
         check_need_rotation_v3(clusters_indices);
-        std::vector<cv::DMatch> matches_to_show;
-        for(const auto & cluster_indices : clusters_indices){
-            for (auto pit = cluster_indices.indices.begin (); pit != cluster_indices.indices.end(); ++pit){
-                std::cout << *pit << ' ';
-                if(cluster_indices.indices.size() > 1){ // dont't show clusters with only one vector translation
-                    matches_to_show.push_back(good_matches_conc.at(*pit));
-                }
-            }
-            std::cout << std::endl;
-        }
+//        std::vector<cv::DMatch> matches_to_show;
+//        for(const auto & cluster_indices : clusters_indices){
+//            for (auto pit = cluster_indices.indices.begin (); pit != cluster_indices.indices.end(); ++pit){
+//                std::cout << *pit << ' ';
+//                if(cluster_indices.indices.size() > 1){ // dont't show clusters with only one vector translation
+//                    matches_to_show.push_back(good_matches_conc.at(*pit));
+//                }
+//            }
+//            std::cout << std::endl;
+//        }
     }
 
 //    if(parameters.test_id>=0){
@@ -393,38 +391,39 @@ void Cluster::check_need_rotation_v3(std::vector<pcl::PointIndices> &cluster_ind
                 first.push_back(kp_first);
                 second.push_back(kp_second);
             }
-//            cv::Mat transform = cv::estimateRigidTransform(first, second, true);
-//            std::vector<double> main_transform{
-//                0.999428014664722, -0.01302791791974173, 100.5138984921331,
-//                0.01129921694475718, 0.9902744729629283, 57.0081216044651};
-            cv::Mat transform = cv::Mat(2,3, CV_64F);
+            cv::Mat transform = cv::estimateRigidTransform(first, second, true);
+//            cv::Mat transform = cv::Mat(2,3, CV_64F);
 //            std::vector<double> data_{0.6,0.4,0,-0.4,0.6,0};
-//            std::vector<double> data_{1,0,100,0,1,-57};
-            std::vector<double> data_{
-                0.9, -0.44, 0,
-                0.44, 0.9,  0};
-            std::memcpy(transform.data, data_.data(), data_.size()*sizeof(double));
+//            std::vector<double> data_{
+//                1, 0, 100,
+//                0, 1, -57};
+//            std::vector<double> data_{
+//                0.9, -0.44, 0,
+//                0.44, 0.9,  0};
+//            std::memcpy(transform.data, data_.data(), data_.size()*sizeof(double));
+
+//            std::vector<double> main_transform{
+//                    0.999428014664722, -0.01302791791974173, 100.5138984921331,
+//                    0.01129921694475718, 0.9902744729629283, 57.0081216044651};
 //            std::memcpy(transform.data, main_transform.data(), main_transform.size()*sizeof(double));
 
             if(transform.dims) {
-//                cv::Mat transform = cv::estimateRigidTransform(first, second, true);
-
                 auto transformed = first_map->apply_transform(transform, shift_map);
                 std::cout << "shift_map: " << shift_map << std::endl;
                 img = transformed->convert_to_grayscale_img();
                 imgs.push_back(img);
-//                imgs.push_back(second_map->convert_to_grayscale_img());
-//                auto merged_maps = transformed->full_merge(second_map, shift_map);
+                imgs.push_back(second_map->convert_to_grayscale_img());
+                auto merged_maps = transformed->full_merge(second_map, shift_map);
+                imgs.push_back(merged_maps->convert_to_grayscale_img());
 //                cv::Size max_sz(std::max(img.rows, second_parts_maps.at(0).rows),
 //                                std::max(img.cols, second_parts_maps.at(0).cols));
 //  y inversed
-//                transform.at<double>(1,2) = -transform.at<double>(1,2);
+
                 cv::Mat out(img.rows, img.cols, first_parts_maps.at(0).type());
-                transform.at<double>(0,2) = shift_map.x/2.0l;
-                transform.at<double>(1,2) = shift_map.y/2.0;
+//                transform.at<double>(0,2) += shift_map.x;
                 cv::warpAffine(first_parts_maps.at(0), out, transform, out.size());
 //                cv::Mat result_merging = merge_img(out ,second_parts_maps.at(0));
-                imgs.push_back(out);
+//                imgs.push_back(out);
             }
 //            std::cout << "transform: "  << std::endl << transform << std::endl;
         }
