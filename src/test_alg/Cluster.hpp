@@ -98,8 +98,8 @@ Cluster::Cluster(const Parameters& p) : parameters(p) {
                                     std::istreambuf_iterator<char>());
         first_map->load_state(file_content);
         first_map->crop_by_bounds();
-//        auto rotated = first_map->rotate(0.785398163);
-//        first_map.swap(rotated);
+        auto rotated = first_map->rotate(0.785398163);
+        first_map.swap(rotated);
 
 //        cv::imshow("rotated", rotated->convert_to_grayscale_img());
 //        cv::waitKey();

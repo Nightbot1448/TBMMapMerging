@@ -336,22 +336,37 @@ public:
         std::cout << "transform" << std::endl << transform << std::endl;
         auto gmp = MapValues::gmp;
         auto new_bounds = get_transformed_bounds(transform);
-        auto gmp_mod = GridMapParams{new_bounds.at(2)-new_bounds.at(0), new_bounds.at(3)-new_bounds.at(1), gmp.meters_per_cell};
+        int new_width = new_bounds.at(2)-new_bounds.at(0);
+        int new_height = new_bounds.at(3)-new_bounds.at(1);
+        auto gmp_mod = GridMapParams{new_width, new_height, gmp.meters_per_cell};
         auto transformed_map = std::make_shared<UnboundedPlainGridMap>(UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp_mod));
         transformed_map->_origin = this->_origin+DiscretePoint2D(new_bounds.at(0), new_bounds.at(1));
         std::cout << "origin: " << transformed_map->origin() << std::endl;
         std::cout << "old sz: " << transformed_map->width() << ' ' << transformed_map->height() << std::endl;
         DiscretePoint2D inv_transformed_origin = -transformed_map->_origin;
         DiscretePoint2D pnt;
-        for(pnt.y = 0; pnt.y < height(); ++pnt.y) {
-            for (pnt.x = 0; pnt.x < width(); ++pnt.x) {
+//        for(pnt.y = 0; pnt.y < height(); ++pnt.y) {
+//            for (pnt.x = 0; pnt.x < width(); ++pnt.x) {
+//                cv::Mat point{(double)pnt.x,(double)pnt.y,1.0};
+//                cv::Mat base_pt = transform * point;
+//                DiscretePoint2D cell_pnt((int)std::round(base_pt.at<double>(0)),
+//                        (int)std::round(base_pt.at<double>(1)));
+//                cell_pnt += inv_transformed_origin;
+//                const VinyDSCell &map_value = this->operator[](pnt-_origin);
+//                transformed_map->setCell(cell_pnt, new VinyDSCell(map_value));
+//            }
+//        }
+        cv::Mat inversed_transform;
+        cv::invertAffineTransform(transform, inversed_transform);
+        std::cout << "inversed transform:" << std::endl << inversed_transform << std::endl;
+        for(pnt.y = 0; pnt.y < new_height; ++pnt.y) {
+            for (pnt.x = 0; pnt.x < new_width; ++pnt.x) {
                 cv::Mat point{(double)pnt.x,(double)pnt.y,1.0};
-                cv::Mat base_pt = transform * point;
-                DiscretePoint2D cell_pnt((int)std::round(base_pt.at<double>(0)),
-                        (int)std::round(base_pt.at<double>(1)));
-                cell_pnt += inv_transformed_origin;
-                const VinyDSCell &map_value = this->operator[](pnt-_origin);
-                transformed_map->setCell(cell_pnt, new VinyDSCell(map_value));
+                cv::Mat base_pt = inversed_transform * point;
+                DiscretePoint2D cell_pnt(static_cast<int>(base_pt.at<double>(0)),
+                                         static_cast<int>(base_pt.at<double>(1)));
+                const VinyDSCell &map_value = this->operator[](cell_pnt-_origin);
+                transformed_map->setCell(pnt+inv_transformed_origin, new VinyDSCell(map_value));
             }
         }
         std::cout << "new origin: " << transformed_map->origin() << std::endl;

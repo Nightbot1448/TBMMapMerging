@@ -3,6 +3,12 @@ project(map_merging)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3 -pthread -fdiagnostics-color")
 
+# delete lower
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread -fdiagnostics-color")
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+#delete upper
+
+
 if(${CMAKE_VERSION} VERSION_LESS "3.1")
   add_compile_options(-std=c++14)
 else()
