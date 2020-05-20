@@ -287,15 +287,14 @@ public:
 		int width = this->width();
 		int height = this->height();
 		auto gmp = MapValues::gmp;
-		auto gmp_rot = GridMapParams{
-			int(std::ceil(width*std::abs(std::cos(angle)) + height*std::abs(std::sin(angle)))), 
-			int(std::ceil(width*std::abs(std::sin(angle)) + height*std::abs(std::cos(angle)))),
-			gmp.meters_per_cell};
+		int rotated_width = static_cast<int>(std::ceil((width*std::abs(std::cos(angle)) + height*std::abs(std::sin(angle)))/50)*50);
+        int rotated_height = static_cast<int>(std::ceil((width*std::abs(std::sin(angle)) + height*std::abs(std::cos(angle)))/50)*50);
+		auto gmp_rot = GridMapParams{ rotated_width, rotated_height, gmp.meters_per_cell};
 
 		auto rotated_map = std::make_shared<UnboundedPlainGridMap>(UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp_rot));
 		
-		double inv_sin_angle = std::sin(-angle * CV_PI / 180);
-		double inv_cos_angle = std::cos(-angle * CV_PI / 180);
+		double inv_sin_angle = std::sin(-angle);
+		double inv_cos_angle = std::cos(-angle);
 
 		DiscretePoint2D new_origin = rotated_map->origin();
 		DiscretePoint2D new_end_of_map = DiscretePoint2D(rotated_map->width(),
@@ -304,8 +303,8 @@ public:
 		for(pnt.y = -new_origin.y; pnt.y < new_end_of_map.y; ++pnt.y) {
 			for (pnt.x = -new_origin.x; pnt.x < new_end_of_map.x; ++pnt.x) {
 				DiscretePoint2D cell_pnt;
-				cell_pnt.x = std::round((pnt.x-axis.x) * inv_cos_angle - (pnt.y - axis.y) * inv_sin_angle);
-				cell_pnt.y = std::round((pnt.x-axis.x) * inv_sin_angle + (pnt.y - axis.y) * inv_cos_angle);
+				cell_pnt.x = static_cast<int>(std::round((pnt.x-axis.x) * inv_cos_angle - (pnt.y - axis.y) * inv_sin_angle));
+				cell_pnt.y = static_cast<int>(std::round((pnt.x-axis.x) * inv_sin_angle + (pnt.y - axis.y) * inv_cos_angle));
 				cell_pnt += axis;
 				const GridCell &map_value = this->operator[](cell_pnt);
 				rotated_map->setCell(pnt, new VinyDSCell(dynamic_cast<const VinyDSCell &>(map_value)));
@@ -332,47 +331,6 @@ public:
         return shifted_map;
     }
 
-//    virtual std::shared_ptr<UnboundedPlainGridMap> apply_transform(const cv::Mat &transform){
-////	    this->crop_by_bounds();
-//        cv::Mat inversed_transform;
-//        cv::Mat original;
-//        cv::invertAffineTransform(transform, inversed_transform);
-////        cv::invertAffineTransform(inversed_transform, original);
-//        std::cout << "transform" << std::endl << transform << std::endl;
-//        std::cout << "inversed" << std::endl << inversed_transform << std::endl;
-////        std::cout << "inversed^2" << std::endl << original << std::endl;
-//
-//        auto gmp = MapValues::gmp;
-//        std::vector<int> new_bounds = get_transformed_bounds(transform);
-//
-//        std::cout << "new bounds: [" << new_bounds.at(0) << ", " <<new_bounds.at(1)
-//            << "]; -> [" << new_bounds.at(2) << ", " << new_bounds.at(3) << ']' << std::endl;
-//        GridMapParams gmp_modified{(int)std::ceil((new_bounds.at(2) - new_bounds.at(0))/100.0)*100,
-//                                   (int)std::ceil((new_bounds.at(3) - new_bounds.at(1))/100.0)*100,
-//                                   gmp.meters_per_cell};
-//
-//        auto transformed_map = std::make_shared<UnboundedPlainGridMap>(UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp_modified));
-//        DiscretePoint2D new_origin = transformed_map->origin();
-////        DiscretePoint2D new_origin = DiscretePoint2D((int)std::ceil(-new_bounds.at(0)/50.0)*50, (int)std::ceil(-new_bounds.at(1)/50.0)*50);
-//        DiscretePoint2D new_end_of_map = DiscretePoint2D(transformed_map->width(),
-//                                                         transformed_map->height()) - new_origin;
-////        transformed_map->_origin = new_origin;
-//        std::cout << "new size:" << transformed_map->width() << ' ' << transformed_map->height() << std::endl;
-//        std::cout << "new origin:" << transformed_map->origin() << std::endl;
-//        DiscretePoint2D pnt;
-//        for(pnt.y = -new_origin.y; pnt.y < new_end_of_map.y; ++pnt.y) {
-//            for (pnt.x = -new_origin.x; pnt.x < new_end_of_map.x; ++pnt.x) {
-//                cv::Mat point{(double)pnt.x,(double)pnt.y,1.0};
-//                cv::Mat base_pt = inversed_transform * point;
-//                DiscretePoint2D cell_pnt((int)base_pt.at<double>(0), (int)base_pt.at<double>(1));
-//                const VinyDSCell &map_value = this->operator[](cell_pnt);
-//                transformed_map->setCell(pnt, new VinyDSCell(map_value));
-//            }
-//        }
-//
-//        return transformed_map;
-//	}
-
     // mat 2x3 [R|t]
     virtual std::shared_ptr<UnboundedPlainGridMap> apply_transform(const cv::Mat &transform, DiscretePoint2D &changed_size){
         std::cout << "transform" << std::endl << transform << std::endl;
@@ -385,8 +343,6 @@ public:
         std::cout << "old sz: " << transformed_map->width() << ' ' << transformed_map->height() << std::endl;
         DiscretePoint2D inv_transformed_origin = -transformed_map->_origin;
         DiscretePoint2D pnt;
-//        cv::Mat inverted_transform;
-//        cv::invertAffineTransform(transform, inverted_transform);
         for(pnt.y = 0; pnt.y < height(); ++pnt.y) {
             for (pnt.x = 0; pnt.x < width(); ++pnt.x) {
                 cv::Mat point{(double)pnt.x,(double)pnt.y,1.0};
@@ -400,9 +356,47 @@ public:
         }
         std::cout << "new origin: " << transformed_map->origin() << std::endl;
         std::cout << "new sz: " << transformed_map->width() << ' ' << transformed_map->height() << std::endl;
-        changed_size = DiscretePoint2D(transformed_map->width()-width(), transformed_map->height() - height());
+        changed_size = DiscretePoint2D(transformed_map->width()-gmp_mod.width_cells,
+                transformed_map->height() - gmp_mod.height_cells);
+        if(changed_size.x!=0 || changed_size.y != 0){
+            bool res = transformed_map->clear_bounds(changed_size);
+            std::cout << "was cropped: " << res << std::endl;
+        }
         return transformed_map;
     }
+
+    bool clear_bounds(DiscretePoint2D &changed_size){
+        int min_x = width(), min_y = height();
+
+        for(int row_id = 0; row_id < height(); row_id++){
+            for(int cell_id = 0; cell_id < width(); cell_id++){
+                auto &cell = _cells[row_id][cell_id];
+                if(cell->belief().unknown() != 1.0f){
+                    if (min_x > cell_id)
+                        min_x = cell_id;
+                    if (min_y > row_id)
+                        min_y = row_id;
+                }
+            }
+        }
+        if(min_x > changed_size.x && min_y > changed_size.y){
+            int new_width = width() - min_x;
+            int new_height = height() - min_y;
+            Coord new_origin(new_width/2, new_height/2);
+            for (int j=0; j < new_height; j++) {
+                for (int i = 0; i < new_width; ++i) {
+                    _cells[j][i].reset(_cells[changed_size.y+j][changed_size.x+i].release());
+                }
+                _cells.at(j).resize(new_width);
+            }
+            _cells.resize(new_height);
+            set_height(new_height);
+            set_width(new_width);
+            _origin = new_origin;
+            return true;
+        }
+        return false;
+	}
 
     std::shared_ptr<UnboundedPlainGridMap> full_merge(std::shared_ptr<UnboundedPlainGridMap> other, DiscretePoint2D changed_size){
         DiscretePoint2D pnt;
@@ -417,10 +411,8 @@ public:
         merged_map->set_height(height_minmax.second);
         merged_map->_origin = DiscretePoint2D(width_minmax.second/2, height_minmax.second/2);
         std::cout << "merged sz & origin: {" << merged_map->width() << ' ' << merged_map->height() << "}; " << merged_map->_origin << std::endl;
-//        DiscretePoint2D merged_origin = merged_map->_origin;
         for (pnt.y = 0; pnt.y < height_minmax.first; ++pnt.y) {
             for (pnt.x = 0; pnt.x < width_minmax.first; ++pnt.x) {
-//                std::cout << pnt.x << std::endl;
                 const TBM &el0 = this->_cells[pnt.y][pnt.x]->belief();
                 const TBM &el1 = other->_cells[pnt.y][pnt.x]->belief();
                 TBM res = disjunctive(el0,el1);
@@ -428,7 +420,6 @@ public:
                 merged_map->_cells[pnt.y][pnt.x].reset(new VinyDSCell(occ, res));
             }
         }
-//        std::cout << std::endl;
         return merged_map;
 	}
 
@@ -451,11 +442,10 @@ private:
         std::memcpy(mat.data, data_.data(), data_.size()*sizeof(double));
         bounds.push_back(mat);
         std::vector<cv::Mat> new_bounds;
-//        std::cout << "points: "<< std::endl;
         for(auto &point: bounds){
             new_bounds.push_back(transform * point);
-//            std::cout << "{" << point.at<double>(0) << ", " << point.at<double>(1) << "} -> {"
-//                    << new_bounds.back().at<double>(0) << ", " << new_bounds.back().at<double>(1) << "}" << std::endl;
+            std::cout << "{" << point.at<double>(0) << ", " << point.at<double>(1) << "} -> {"
+                    << new_bounds.back().at<double>(0) << ", " << new_bounds.back().at<double>(1) << "}" << std::endl;
         }
         double max_x=0, min_x=0, max_y=0, min_y=0;
         for(auto &point: new_bounds){
