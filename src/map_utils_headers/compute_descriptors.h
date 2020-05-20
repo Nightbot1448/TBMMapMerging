@@ -50,14 +50,11 @@ struct _thread_change_descriptor_return {
 
 std::vector<cv::DMatch> get_good_matches(cv::Mat &first_descriptor, cv::Mat &second_descriptor, float ratio_thresh) 
 {
-//     cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::BRUTEFORCE);
-    cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::BRUTEFORCE_L1);
-//    cv::FlannBasedMatcher matcher_ = cv::FlannBasedMatcher(cv::makePtr<cv::flann::LshIndexParams>(12, 20, 2));
+    cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::BRUTEFORCE_HAMMING);
     std::vector<std::vector<cv::DMatch>> knn_matches;
 
     try{
          matcher->knnMatch( first_descriptor, second_descriptor, knn_matches, 2 );
-//        matcher_.knnMatch(first_descriptor, second_descriptor, knn_matches, 2);
     }
     catch(cv::Exception &e){
         std::cout << e.what() << std::endl;
