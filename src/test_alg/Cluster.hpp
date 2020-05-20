@@ -101,8 +101,6 @@ Cluster::Cluster(const Parameters& p) : parameters(p) {
         auto rotated = first_map->rotate(0.785398163);
         first_map.swap(rotated);
 
-//        cv::imshow("rotated", rotated->convert_to_grayscale_img());
-//        cv::waitKey();
         first_parts_maps = first_map->get_maps_grs_ofu();
         in.close();
         in = std::ifstream(parameters.second_filename);
@@ -140,47 +138,21 @@ void Cluster::get_first_transform()
         first.push_back(kp_first);
         second.push_back(kp_second);
     }
-//    auto transformed = first_map->apply_transform(transform, shift_map);
-//    std::cout << "shift_map: " << shift_map << std::endl;
-//    img = transformed->convert_to_grayscale_img();
-//    imgs.push_back(img);
-//    imgs.push_back(second_map->convert_to_grayscale_img());
-//    auto merged_maps = transformed->full_merge(second_map, shift_map);
-//    imgs.push_back(merged_maps->convert_to_grayscale_img());
-//    cv::Mat out(img.rows, img.cols, first_parts_maps.at(0).type());
-//    cv::warpAffine(first_parts_maps.at(0), out, transform, out.size());
     cv::Mat transform = cv::estimateRigidTransform(first, second, true);
-//    transform.at<double>(0,0) = 1;
-//    transform.at<double>(0,1) = 0;
-//    transform.at<double>(1,0) = 0;
-//    transform.at<double>(1,1) = 1;
-//    transform.at<double>(0,2) = 0;
-//    transform.at<double>(1,2) = 0;
     std::cout << "first transform is:" << std::endl << transform << std::endl;
     if(transform.dims == 2){
         DiscretePoint2D changed_sz;
         cv::Mat first_img = first_map->convert_to_grayscale_img();
         auto new_map = first_map->apply_transform(transform, changed_sz);
-        std::cout << "changed size: " << changed_sz << std::endl;
-        cv::Size out_sz(new_map->width(), new_map->height());
-        cv::Mat out(out_sz, first_img.type());
-        transform.at<double>(0,2) += changed_sz.x;
-        transform.at<double>(1,2) += changed_sz.y;
-        cv::warpAffine(first_img, out, transform, out_sz);
-//        auto merged_map = new_map->full_merge(second_map, changed_sz);
+        auto merged_map = new_map->full_merge(second_map);
 
-        cv::Mat new_map_grs = new_map->convert_to_grayscale_img();
+        cv::Mat new_map_grs = merged_map->convert_to_grayscale_img();
         cv::Mat sec_grs = second_map->convert_to_grayscale_img();
-//        cv::Mat merged_imgs = merge_img(new_map_grs, sec_grs);
-//        cv::Mat merged_maps = merged_map->convert_to_grayscale_img();
         int k=0;
         while(k!= 27){
             cv::imshow("first map", first_img);
-            cv::imshow("transformed map", new_map_grs);
+            cv::imshow("merged map", new_map_grs);
             cv::imshow("second map", sec_grs);
-            cv::imshow("transformed img", out);
-//            cv::imshow("merged imgs", merged_imgs);
-//            cv::imshow("merged maps", merged_maps);
             k=cv::waitKey();
         }
     }
@@ -340,7 +312,7 @@ void Cluster::check_need_rotation_v3(std::vector<pcl::PointIndices> &cluster_ind
                 img = transformed->convert_to_grayscale_img();
                 imgs.push_back(img);
                 imgs.push_back(second_map->convert_to_grayscale_img());
-                auto merged_maps = transformed->full_merge(second_map, shift_map);
+                auto merged_maps = transformed->full_merge(second_map);
                 imgs.push_back(merged_maps->convert_to_grayscale_img());
                 cv::Mat out(img.rows, img.cols, first_parts_maps.at(0).type());
                 cv::warpAffine(first_parts_maps.at(0), out, transform, out.size());

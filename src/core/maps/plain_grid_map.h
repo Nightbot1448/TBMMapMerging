@@ -413,7 +413,7 @@ public:
         return false;
 	}
 
-    std::shared_ptr<UnboundedPlainGridMap> full_merge(std::shared_ptr<UnboundedPlainGridMap> other, DiscretePoint2D changed_size){
+    std::shared_ptr<UnboundedPlainGridMap> full_merge(std::shared_ptr<UnboundedPlainGridMap> other){
         DiscretePoint2D pnt;
         std::cout << "this sz & origin: {" << this->width() << ' ' << this->height() << "}; " << this->_origin << std::endl;
         std::cout << "other sz & origin: {" << other->width() << ' ' << other->height() << "}; " << other->_origin << std::endl;
