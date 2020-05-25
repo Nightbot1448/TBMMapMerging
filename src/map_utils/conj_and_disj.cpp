@@ -5,6 +5,9 @@
 
 #include <nav_msgs/OccupancyGrid.h>
 
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+
 #include "../core/maps/plain_grid_map.h"
 #include "../slams/viny/viny_grid_cell.h"
 
@@ -135,6 +138,15 @@ int main(int  argc, char **argv) {
             map_msg_disj.data.push_back(cell_value);         
         }
     }
+
+    cv::Mat first_map_img = map.convert_to_grayscale_img();
+    cv::Mat second_map_img = map_second.convert_to_grayscale_img();
+    cv::Mat conj_img = map_conj.convert_to_grayscale_img();
+    cv::Mat disj_img = map_disj.convert_to_grayscale_img();
+    cv::imwrite("/home/dmo/Documents/diplom/pictures/for_rep/cj_example_first.jpg", first_map_img);
+    cv::imwrite("/home/dmo/Documents/diplom/pictures/for_rep/cj_example_second.jpg", second_map_img);
+    cv::imwrite("/home/dmo/Documents/diplom/pictures/for_rep/cj_example_conj.jpg", conj_img);
+    cv::imwrite("/home/dmo/Documents/diplom/pictures/for_rep/cj_example_disj.jpg", disj_img);
 
     map_conj.save_state_to_file("/home/dmo/Documents/diplom/dumps/conj.txt");
     map_disj.save_state_to_file("/home/dmo/Documents/diplom/dumps/disj.txt");

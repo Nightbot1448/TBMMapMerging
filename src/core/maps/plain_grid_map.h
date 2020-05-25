@@ -413,7 +413,7 @@ public:
         return false;
 	}
 
-    std::shared_ptr<UnboundedPlainGridMap> full_merge(std::shared_ptr<UnboundedPlainGridMap> other){
+    std::shared_ptr<UnboundedPlainGridMap> full_merge(std::shared_ptr<UnboundedPlainGridMap> other, TBM (*merge_func)(const TBM& lhs, const TBM& rhs)){
         DiscretePoint2D pnt;
         std::cout << "this sz & origin: {" << this->width() << ' ' << this->height() << "}; " << this->_origin << std::endl;
         std::cout << "other sz & origin: {" << other->width() << ' ' << other->height() << "}; " << other->_origin << std::endl;
@@ -430,13 +430,62 @@ public:
             for (pnt.x = 0; pnt.x < width_minmax.first; ++pnt.x) {
                 const TBM &el0 = this->_cells[pnt.y][pnt.x]->belief();
                 const TBM &el1 = other->_cells[pnt.y][pnt.x]->belief();
-                TBM res = disjunctive(el0,el1);
+                TBM res = merge_func(el0,el1);
                 Occupancy occ = TBM_to_O(res);
                 merged_map->_cells[pnt.y][pnt.x].reset(new VinyDSCell(occ, res));
             }
         }
         return merged_map;
 	}
+
+    std::shared_ptr<UnboundedPlainGridMap> full_merge_disjunctive(std::shared_ptr<UnboundedPlainGridMap> other){
+	    return full_merge(other, disjunctive);
+//        DiscretePoint2D pnt;
+//        std::cout << "this sz & origin: {" << this->width() << ' ' << this->height() << "}; " << this->_origin << std::endl;
+//        std::cout << "other sz & origin: {" << other->width() << ' ' << other->height() << "}; " << other->_origin << std::endl;
+//        std::pair<int,int> width_minmax = std::minmax(this->width(), other->width());
+//        std::pair<int,int> height_minmax = std::minmax(this->height(), other->height());
+//        auto gmp = MapValues::gmp;
+//        auto merged_gmp = GridMapParams{width_minmax.second, height_minmax.second, gmp.meters_per_cell};
+//        auto merged_map = std::make_shared<UnboundedPlainGridMap>(UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), merged_gmp));
+//        merged_map->set_width(width_minmax.second);
+//        merged_map->set_height(height_minmax.second);
+//        merged_map->_origin = DiscretePoint2D(width_minmax.second/2, height_minmax.second/2);
+//        std::cout << "merged sz & origin: {" << merged_map->width() << ' ' << merged_map->height() << "}; " << merged_map->_origin << std::endl;
+//        for (pnt.y = 0; pnt.y < height_minmax.first; ++pnt.y) {
+//            for (pnt.x = 0; pnt.x < width_minmax.first; ++pnt.x) {
+//                const TBM &el0 = this->_cells[pnt.y][pnt.x]->belief();
+//                const TBM &el1 = other->_cells[pnt.y][pnt.x]->belief();
+//                TBM res = disjunctive(el0,el1);
+//                Occupancy occ = TBM_to_O(res);
+//                merged_map->_cells[pnt.y][pnt.x].reset(new VinyDSCell(occ, res));
+//            }
+//        }
+//        return merged_map;
+	}
+
+    std::shared_ptr<UnboundedPlainGridMap> full_merge_conjunctive(std::shared_ptr<UnboundedPlainGridMap> other){
+        return full_merge(other, conjunctive);
+//        DiscretePoint2D pnt;
+//        std::pair<int,int> width_minmax = std::minmax(this->width(), other->width());
+//        std::pair<int,int> height_minmax = std::minmax(this->height(), other->height());
+//        auto gmp = MapValues::gmp;
+//        auto merged_gmp = GridMapParams{width_minmax.second, height_minmax.second, gmp.meters_per_cell};
+//        auto merged_map = std::make_shared<UnboundedPlainGridMap>(UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), merged_gmp));
+//        merged_map->set_width(width_minmax.second);
+//        merged_map->set_height(height_minmax.second);
+//        merged_map->_origin = DiscretePoint2D(width_minmax.second/2, height_minmax.second/2);
+//        for (pnt.y = 0; pnt.y < height_minmax.first; ++pnt.y) {
+//            for (pnt.x = 0; pnt.x < width_minmax.first; ++pnt.x) {
+//                const TBM &el0 = this->_cells[pnt.y][pnt.x]->belief();
+//                const TBM &el1 = other->_cells[pnt.y][pnt.x]->belief();
+//                TBM res = conjunctive(el0,el1);
+//                Occupancy occ = TBM_to_O(res);
+//                merged_map->_cells[pnt.y][pnt.x].reset(new VinyDSCell(occ, res));
+//            }
+//        }
+//        return merged_map;
+    }
 
 private:
     std::vector<int> get_transformed_bounds(const cv::Mat &transform){

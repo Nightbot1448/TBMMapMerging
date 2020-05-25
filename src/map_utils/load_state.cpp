@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <fstream>
 #include <iterator>
+#include <string>
 
 #include <nav_msgs/OccupancyGrid.h>
 
@@ -61,15 +62,22 @@ int main(int  argc, char **argv) {
 
     ros::Rate loop_rate(1000);
     cv::Mat map_img =  map.convert_to_grayscale_img();
-    
-    while(ros::ok())
-    {
-        pub.publish(map_msg);
-        cv::imshow("Map", map_img);
-        cv::waitKey(1);
-        ros::spinOnce();
-        loop_rate.sleep();
-    }
+
+    size_t pos_slash = filename_.find_last_of('/');
+    size_t pos_point = filename_.find_last_of('.');
+
+    std::string result_filename("/home/dmo/Documents/diplom/pictures/for_rep/desc_compare/");
+    result_filename += filename_.substr(pos_slash+1, pos_point) + ".jpg";
+    cv::imwrite(result_filename, map_img);
+
+    // while(ros::ok())
+    // {
+    //     pub.publish(map_msg);
+    //     cv::imshow("Map", map_img);
+    //     cv::waitKey(1);
+    //     ros::spinOnce();
+    //     loop_rate.sleep();
+    // }
 
     return 0;
 }

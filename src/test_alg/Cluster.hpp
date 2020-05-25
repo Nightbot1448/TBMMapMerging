@@ -144,15 +144,22 @@ void Cluster::get_first_transform()
         DiscretePoint2D changed_sz;
         cv::Mat first_img = first_map->convert_to_grayscale_img();
         auto new_map = first_map->apply_transform(transform, changed_sz);
-        auto merged_map = new_map->full_merge(second_map);
+        auto merged_map_disjunctive = new_map->full_merge_disjunctive(second_map);
+        auto merged_map_conjunctive = new_map->full_merge_conjunctive(second_map);
 
-        cv::Mat new_map_grs = merged_map->convert_to_grayscale_img();
+        cv::Mat merged_map_disj_grs = merged_map_disjunctive->convert_to_grayscale_img();
+        cv::Mat merged_map_conj_grs = merged_map_conjunctive->convert_to_grayscale_img();
         cv::Mat sec_grs = second_map->convert_to_grayscale_img();
         int k=0;
         while(k!= 27){
             cv::imshow("first map", first_img);
-            cv::imshow("merged map", new_map_grs);
             cv::imshow("second map", sec_grs);
+            cv::imshow("merged disj", merged_map_disj_grs);
+            cv::imshow("merged conj", merged_map_conj_grs);
+//            cv::imwrite("/home/dmo/Documents/diplom/pictures/result_first_map.jpg", first_img);
+//            cv::imwrite("/home/dmo/Documents/diplom/pictures/result_second_map.jpg", sec_grs);
+//            cv::imwrite("/home/dmo/Documents/diplom/pictures/result_merged_conjunctive.jpg", merged_map_conj_grs);
+//            cv::imwrite("/home/dmo/Documents/diplom/pictures/result_merged_disjunctive.jpg", merged_map_disj_grs);
             k=cv::waitKey();
         }
     }
@@ -312,7 +319,7 @@ void Cluster::check_need_rotation_v3(std::vector<pcl::PointIndices> &cluster_ind
                 img = transformed->convert_to_grayscale_img();
                 imgs.push_back(img);
                 imgs.push_back(second_map->convert_to_grayscale_img());
-                auto merged_maps = transformed->full_merge(second_map);
+                auto merged_maps = transformed->full_merge_disjunctive(second_map);
                 imgs.push_back(merged_maps->convert_to_grayscale_img());
                 cv::Mat out(img.rows, img.cols, first_parts_maps.at(0).type());
                 cv::warpAffine(first_parts_maps.at(0), out, transform, out.size());

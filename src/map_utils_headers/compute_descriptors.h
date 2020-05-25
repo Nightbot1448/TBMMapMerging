@@ -76,15 +76,25 @@ double Euclid_distance(cv::KeyPoint &f, cv::KeyPoint &s){
 
 cv::Mat concatenateDescriptor(cv::Mat &d_occ, cv::Mat &d_emp, cv::Mat &d_unk)
 {
-    size_t rows = static_cast<size_t>(d_occ.size[0]);
-    size_t cols = static_cast<size_t>(d_occ.size[1]);
-    cv::Mat new_descriptor(rows, cols*3, CV_8U);
-    for (size_t row_id = 0; row_id < rows; row_id++) {
-		uchar *dst = new_descriptor.ptr(row_id);
-        std::memcpy( dst,       d_occ.ptr(row_id), cols);
-        std::memcpy( dst+cols,  d_emp.ptr(row_id), cols);
-        std::memcpy( dst+cols*2,d_unk.ptr(row_id), cols);
-	}
+    std::chrono::time_point<std::chrono::system_clock> begin_ = std::chrono::system_clock::now();
+
+//    size_t rows = static_cast<size_t>(d_occ.size[0]);
+//    size_t cols = static_cast<size_t>(d_occ.size[1]);
+//    cv::Mat new_descriptor(rows, cols*3, CV_8U);
+//    for (size_t row_id = 0; row_id < rows; row_id++) {
+//		uchar *dst = new_descriptor.ptr(row_id);
+//        std::memcpy( dst,       d_occ.ptr(row_id), cols);
+//        std::memcpy( dst+cols,  d_emp.ptr(row_id), cols);
+//        std::memcpy( dst+cols*2,d_unk.ptr(row_id), cols);
+//	}
+    std::vector<cv::Mat> input_{d_occ,d_emp,d_unk} ;
+    cv::Mat new_descriptor;
+    cv::hconcat(input_, new_descriptor);
+
+    std::chrono::time_point<std::chrono::system_clock> end_ = std::chrono::system_clock::now();
+    std::cout << "concatenate time: "
+            << std::chrono::duration_cast<std::chrono::microseconds>(end_-begin_).count()
+            << std::endl;
     return new_descriptor;
 }
 

@@ -4,8 +4,8 @@
       <arg name="node_start_delay" default="1.0" />
       <arg name="file" default="/home/dmo/Documents/diplom/dumps/compressed_dump_8.txt" />
             <!-- respawn="true" -->
-      <node name="rviz_first_map" pkg="rviz" type="rviz" 
-            args="-d $(find map_merging)/rviz/debug.rviz" />
+      <!-- <node name="rviz_first_map" pkg="rviz" type="rviz" 
+            args="-d $(find map_merging)/rviz/debug.rviz" /> -->
 
       <node pkg="map_merging" type="load_state" name="load_state" output="screen"
           launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
