@@ -41,9 +41,9 @@ int main(int argc, char **argv) {
     auto merged_map = cl.merge();
     std::chrono::time_point<std::chrono::system_clock> after_comp = std::chrono::system_clock::now();
     merged_map->save_state_to_file(p.merged_map);
-    std::cout << "maps was merged"  << std::endl
-        << "result filepath: " << p.merged_map << std::endl << "compute time: "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(after_comp-before_comp).count()
+    // std::cout << "maps was merged"  << std::endl
+    //     << "result filepath: " << p.merged_map << std::endl << "compute time: "
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(after_comp-before_comp).count()
             << std::endl;
 
     return 0;

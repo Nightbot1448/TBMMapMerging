@@ -153,8 +153,9 @@ std::shared_ptr<UnboundedPlainGridMap> TBM_map_merge::get_first_transform()
         first.push_back(kp_first);
         second.push_back(kp_second);
     }
-    cv::Mat transform = cv::estimateRigidTransform(first, second, true);
-//    compute_average_distance(first, second, transform);
+    // cv::Mat transform = cv::estimateRigidTransform(first, second, true);
+    cv::Mat transform = cv::estimateAffine2D(first, second);
+    compute_average_distance(first, second, transform);
     if(transform.dims == 2){
         DiscretePoint2D changed_sz;
         cv::Mat first_img = first_map->convert_to_grayscale_img();
@@ -180,7 +181,7 @@ std::shared_ptr<UnboundedPlainGridMap> TBM_map_merge::get_first_transform()
 //            k=cv::waitKey();
 //        }
     }
-
+    return first_map;
 }
 
 std::shared_ptr<UnboundedPlainGridMap> TBM_map_merge::merge() {
@@ -288,7 +289,8 @@ void TBM_map_merge::rotate_parts(std::vector<pcl::PointIndices> &cluster_indices
                 first.push_back(kp_first);
                 second.push_back(kp_second);
             }
-            cv::Mat transform = cv::estimateRigidTransform(first, second, true);
+            // cv::Mat transform = cv::estimateRigidTransform(first, second, true);
+            cv::Mat transform = cv::estimateAffine2D(first, second);
 
             if(transform.dims) {
                 auto transformed = first_map->apply_transform(transform, shift_map);
@@ -318,6 +320,9 @@ double TBM_map_merge::compute_average_distance(const std::vector<cv::Point2f> &f
     cv::Mat mat(3,1, type_);
     cv::Mat second_;
     std::vector<double> distances;
+    
+    std::cout << "try run" << first.size() << ' ' << second.size() << std::endl;
+    
     for(size_t i = 0; i < first.size(); ++i){
         std::vector<double> data_{first.at(i).x, first.at(i).y, 1};
         std::memcpy(mat.data, data_.data(), data_.size()*sizeof(double));
@@ -327,12 +332,19 @@ double TBM_map_merge::compute_average_distance(const std::vector<cv::Point2f> &f
         distances.push_back(norm);
 
     }
-    double avg_value = std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
+    std::cout << "try run 2" << std::endl;
+    
+    double avg_value = std::pow(
+        std::accumulate(
+            distances.begin(),
+            distances.end(), 1.0, std::multiplies<double>()
+        ), 1.0/distances.size()
+    );
     auto minmax = std::minmax_element(distances.begin(), distances.end());
-    std::cout << "min: " << *(minmax.first) << std::endl
-            << "max: " << *(minmax.second) << std::endl;
-    std::cout << "avg: " << avg_value << std::endl;
-    std::ofstream output_file("/home/dmo/Documents/diplom/distances.txt");
+    std::cout << *(minmax.first) << ' ' << *(minmax.second) << ' ' << avg_value << std::endl;
+    size_t file_base_sz = this->parameters.merged_map.find_last_of('.');
+    std::string distances_filename = this->parameters.merged_map.substr(0, file_base_sz) + "_distances.txt";
+    std::ofstream output_file(distances_filename);
     std::ostream_iterator<double> output_iterator(output_file, "\n");
     std::copy(distances.begin(), distances.end(), output_iterator);
     return avg_value;
