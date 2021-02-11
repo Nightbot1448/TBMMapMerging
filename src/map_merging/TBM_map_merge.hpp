@@ -67,46 +67,12 @@ protected:
     void detectAndCompute();
     std::shared_ptr<UnboundedPlainGridMap> get_first_transform();
 
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr get_translation_of_keypoints(
-//        std::vector<cv::KeyPoint> &kp_first,
-//        std::vector<cv::KeyPoint> &kp_second,
-//        std::vector<cv::DMatch> &good_matches
-//    );
-//
-//    std::vector<pcl::PointIndices> get_keypoints_translations_clusters(
-//        const pcl::PointCloud<pcl::PointXYZ>::Ptr& keypoints_translations
-//    );
-//    void print_clusters(
-//            const pcl::PointCloud<pcl::PointXYZ>::Ptr& keypoints_translations,
-//            const std::vector<pcl::PointIndices>& cluster_indices
-//    );
-
     void rotate_parts(std::vector<pcl::PointIndices> &cluster_indices);
     double compute_average_distance(const std::vector<cv::Point2f> &first,
             const std::vector<cv::Point2f> &second, const cv::Mat &transform);
 };
 
 TBM_map_merge::TBM_map_merge(const Algorithm_parameters& p) : parameters(p) {
-//    if(p.read_imgs) {
-//        auto gmp = MapValues::gmp;
-//        first_map = std::make_shared<UnboundedPlainGridMap>(std::make_shared<VinyDSCell>(), gmp);
-//        second_map = std::make_shared<UnboundedPlainGridMap>(std::make_shared<VinyDSCell>(), gmp);
-//        std::ifstream in(parameters.first_filename);
-//        std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
-//                                    std::istreambuf_iterator<char>());
-//        first_map->load_state(file_content);
-//        first_parts_maps = first_map->get_maps_grs_ofu();
-//
-//        second_parts_maps.at(0) =
-//                cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_2_grs_edited.jpg", cv::IMREAD_GRAYSCALE);
-//        second_parts_maps.at(1) =
-//                cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_2_occ_edited.jpg", cv::IMREAD_GRAYSCALE);
-//        second_parts_maps.at(2) =
-//                cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_2_emp_edited.jpg", cv::IMREAD_GRAYSCALE);
-//        second_parts_maps.at(3) =
-//                cv::imread("/home/dmo/Documents/diplom/pictures/rotated_maps_ph/map_2_unk_edited.jpg", cv::IMREAD_GRAYSCALE);
-//    }
-//    else {
     auto gmp = MapValues::gmp;
     first_map = std::make_shared<UnboundedPlainGridMap>(std::make_shared<VinyDSCell>(), gmp);
     second_map = std::make_shared<UnboundedPlainGridMap>(std::make_shared<VinyDSCell>(), gmp);
@@ -114,6 +80,7 @@ TBM_map_merge::TBM_map_merge(const Algorithm_parameters& p) : parameters(p) {
     std::vector<char> file_content((std::istreambuf_iterator<char>(in)),
                                 std::istreambuf_iterator<char>());
     first_map->load_state(file_content);
+    std::cout << "first map: " << first_map->width() << ' ' << first_map->height() << std::endl;
     first_map->crop_by_bounds();
     auto rotated = first_map->rotate(0.785398163);
     first_map.swap(rotated);
@@ -124,10 +91,11 @@ TBM_map_merge::TBM_map_merge(const Algorithm_parameters& p) : parameters(p) {
     file_content = std::vector<char>((std::istreambuf_iterator<char>(in)),
                                         std::istreambuf_iterator<char>());
     second_map->load_state(file_content);
+    std::cout << "second map: " << second_map->width() << ' ' << second_map->height() << std::endl;
     second_map->crop_by_bounds();
     second_parts_maps = second_map->get_maps_grs_ofu();
     in.close();
-//    }
+
 }
 
 void TBM_map_merge::detectAndCompute(){
@@ -153,7 +121,6 @@ std::shared_ptr<UnboundedPlainGridMap> TBM_map_merge::get_first_transform()
         first.push_back(kp_first);
         second.push_back(kp_second);
     }
-    // cv::Mat transform = cv::estimateRigidTransform(first, second, true);
     cv::Mat transform = cv::estimateAffine2D(first, second);
     compute_average_distance(first, second, transform);
     if(transform.dims == 2){
@@ -163,29 +130,13 @@ std::shared_ptr<UnboundedPlainGridMap> TBM_map_merge::get_first_transform()
         auto merged_map_disjunctive = new_map->full_merge_disjunctive(second_map);
         return merged_map_disjunctive;
 
-//        auto merged_map_conjunctive = new_map->full_merge_conjunctive(second_map);
-
-//        cv::Mat merged_map_disj_grs = merged_map_disjunctive->convert_to_grayscale_img();
-//        cv::Mat merged_map_conj_grs = merged_map_conjunctive->convert_to_grayscale_img();
-//        cv::Mat sec_grs = second_map->convert_to_grayscale_img();
-//        int k=0;
-//        while(k!= 27){
-//            cv::imshow("first map", first_img);
-//            cv::imshow("second map", sec_grs);
-//            cv::imshow("merged disj", merged_map_disj_grs);
-//            cv::imshow("merged conj", merged_map_conj_grs);
-////            cv::imwrite("/home/dmo/Documents/diplom/pictures/result_first_map.jpg", first_img);
-////            cv::imwrite("/home/dmo/Documents/diplom/pictures/result_second_map.jpg", sec_grs);
-////            cv::imwrite("/home/dmo/Documents/diplom/pictures/result_merged_conjunctive.jpg", merged_map_conj_grs);
-////            cv::imwrite("/home/dmo/Documents/diplom/pictures/result_merged_disjunctive.jpg", merged_map_disj_grs);
-//            k=cv::waitKey();
-//        }
     }
     return first_map;
 }
 
 std::shared_ptr<UnboundedPlainGridMap> TBM_map_merge::merge() {
     detectAndCompute();
+
 
     cv::Mat concatenate_d_first = concatenateDescriptor(d_first_occ,
                                                         d_first_emp,
@@ -201,6 +152,12 @@ std::shared_ptr<UnboundedPlainGridMap> TBM_map_merge::merge() {
         cv::Mat second_map_img = second_map->convert_to_grayscale_img();
         cv::Mat result_map_img = merged->convert_to_grayscale_img();
         int k=0;
+    std::cout   << first_map_img.size() << std::endl
+                << second_map->width() << ' ' << second_map->height() << std::endl
+                << second_map_img.size() << std::endl
+                << merged->width() << ' ' << merged->height() << std::endl
+                << result_map_img.size() << std::endl;
+
         while (k != 27){
             cv::imshow("first map", first_map_img);
             cv::imshow("second map", second_map_img);
@@ -208,72 +165,11 @@ std::shared_ptr<UnboundedPlainGridMap> TBM_map_merge::merge() {
             k = cv::waitKey();
         }
     }
+    
     return merged;
 
-//    alg part
-//    --------------------------------------------
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations =
-//            get_translation_of_keypoints(kp_first_conc, kp_second_conc, good_matches_conc);
-//    std::vector<pcl::PointIndices> clusters_indices = get_keypoints_translations_clusters(keypoints_translations);
-//    rotate_parts(clusters_indices);
-//    --------------------------------------------
 }
 
-//void TBM_map_merge::print_clusters(
-//    const pcl::PointCloud<pcl::PointXYZ>::Ptr& keypoints_translations,
-//    const std::vector<pcl::PointIndices>& cluster_indices
-//){
-//    for (const auto & cluster_index : cluster_indices)
-//    {
-//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
-//        for (int index : cluster_index.indices){
-//            cloud_cluster->points.push_back(keypoints_translations->points[index]);
-//        }
-//        cloud_cluster->width = cloud_cluster->points.size ();
-//        cloud_cluster->height = 1;
-//        cloud_cluster->is_dense = true;
-//    }
-//}
-//std::vector<pcl::PointIndices> TBM_map_merge::get_keypoints_translations_clusters(
-//    const pcl::PointCloud<pcl::PointXYZ>::Ptr& keypoints_translations
-//){
-//    if (keypoints_translations->empty()){
-//        return std::vector<pcl::PointIndices>();
-//    }
-//    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-//    tree->setInputCloud(keypoints_translations);
-//
-//    std::vector<pcl::PointIndices> cluster_indices;
-//    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-//    ec.setClusterTolerance(parameters.cluster_tolerance);
-//    ec.setMinClusterSize(1);
-//    ec.setMaxClusterSize(parameters.count_of_features);
-//    ec.setSearchMethod(tree);
-//    ec.setInputCloud(keypoints_translations);
-//    ec.extract(cluster_indices);
-//    return cluster_indices;
-//}
-//pcl::PointCloud<pcl::PointXYZ>::Ptr TBM_map_merge::get_translation_of_keypoints(
-//        std::vector<cv::KeyPoint> &kp_first,
-//        std::vector<cv::KeyPoint> &kp_second,
-//        std::vector<cv::DMatch> &good_matches
-//        )
-//{
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr keypoints_translations(new pcl::PointCloud<pcl::PointXYZ>);
-//    try{
-//        for(auto & match : good_matches) {
-//            keypoints_translations->push_back(
-//                pcl::PointXYZ(
-//                    kp_first[match.queryIdx].pt.x - kp_second[match.trainIdx].pt.x,
-//                    kp_first[match.queryIdx].pt.y - kp_second[match.trainIdx].pt.y,
-//                    0 ));
-//        }
-//    }
-//    catch(std::out_of_range &ex){
-//        std::cout << ex.what() << std::endl;
-//    }
-//    return keypoints_translations;
-//}
 
 void TBM_map_merge::rotate_parts(std::vector<pcl::PointIndices> &cluster_indices){
     std::vector<cv::Mat> imgs;
@@ -321,8 +217,6 @@ double TBM_map_merge::compute_average_distance(const std::vector<cv::Point2f> &f
     cv::Mat second_;
     std::vector<double> distances;
     
-    std::cout << "try run" << first.size() << ' ' << second.size() << std::endl;
-    
     for(size_t i = 0; i < first.size(); ++i){
         std::vector<double> data_{first.at(i).x, first.at(i).y, 1};
         std::memcpy(mat.data, data_.data(), data_.size()*sizeof(double));
@@ -332,7 +226,6 @@ double TBM_map_merge::compute_average_distance(const std::vector<cv::Point2f> &f
         distances.push_back(norm);
 
     }
-    std::cout << "try run 2" << std::endl;
     
     double avg_value = std::pow(
         std::accumulate(
