@@ -13,7 +13,6 @@ int main(int argc, char **argv) {
         "{scale_factor      | 1.2                  | scale factor (float number > 1) }"
         "{ratio_thresh      | 0.7                  | filter matches using the Lowe's ratio test (float number < 1) }"
         "{show_maps         | false                | show imgs of input maps and result map (boolean); Esc to close imgs }"
-//        "{cluster_tolerance    | 2.5                  | cluster tolerance for EuclideanClusterExtraction }"
         ;
     cv::CommandLineParser parser(argc, argv, keys);
 
@@ -40,11 +39,16 @@ int main(int argc, char **argv) {
     std::chrono::time_point<std::chrono::system_clock> before_comp = std::chrono::system_clock::now();
     auto merged_map = cl.merge();
     std::chrono::time_point<std::chrono::system_clock> after_comp = std::chrono::system_clock::now();
-    merged_map->save_state_to_file(p.merged_map);
-    // std::cout << "maps was merged"  << std::endl
-    //     << "result filepath: " << p.merged_map << std::endl << "compute time: "
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(after_comp-before_comp).count()
+    if (merged_map != nullptr){
+        merged_map->save_state_to_file(p.merged_map);
+        std::cout << "maps was merged"  << std::endl
+            << "result filepath: " << p.merged_map << std::endl << "compute time: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(after_comp-before_comp).count()
             << std::endl;
+    }
+    else{
+        std::cout << "maps wasn't merged"  << std::endl;
+    }
 
     return 0;
 }

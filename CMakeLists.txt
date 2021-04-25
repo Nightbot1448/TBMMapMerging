@@ -3,11 +3,6 @@ project(map_merging)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3 -pthread -fdiagnostics-color")
 
-# delete lower
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread -fdiagnostics-color")
-#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
-#delete upper
-
 
 if(${CMAKE_VERSION} VERSION_LESS "3.1")
   add_compile_options(-std=c++14)
@@ -37,7 +32,7 @@ catkin_package()
 # add_executable(map_translation src/map_utils/map_translation.cpp)
 # add_executable(parts_of_map src/map_utils/parts_of_map.cpp)
 # add_executable(conj_and_disj src/map_utils/conj_and_disj.cpp)
-#add_executable(comparator src/map_utils/comparator.cpp)
+add_executable(comparator src/map_utils/comparator.cpp)
 add_executable(map_merging src/map_merging/map_merging.cpp)
 
 
@@ -45,5 +40,5 @@ add_executable(map_merging src/map_merging/map_merging.cpp)
 # target_link_libraries(map_translation ${catkin_LIBRARIES} ${OpenCV_LIBS})
 # target_link_libraries(parts_of_map ${catkin_LIBRARIES} ${OpenCV_LIBS})
 # target_link_libraries(conj_and_disj ${catkin_LIBRARIES} ${OpenCV_LIBS})
-#target_link_libraries(comparator ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(comparator ${catkin_LIBRARIES} ${OpenCV_LIBS})
 target_link_libraries(map_merging ${catkin_LIBRARIES} ${OpenCV_LIBS})

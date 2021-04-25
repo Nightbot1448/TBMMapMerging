@@ -335,9 +335,11 @@ public:
     virtual std::shared_ptr<UnboundedPlainGridMap> apply_transform(const cv::Mat &transform, DiscretePoint2D &changed_size){
 //        std::cout << "transform" << std::endl << transform << std::endl;
         auto gmp = MapValues::gmp;
+		// std::cout << "bounds" << std::endl;
         auto new_bounds = get_transformed_bounds(transform);
         int new_width = new_bounds.at(2)-new_bounds.at(0);
         int new_height = new_bounds.at(3)-new_bounds.at(1);
+		// std::cout << "new bounds" << std::endl;
         auto gmp_mod = GridMapParams{new_width, new_height, gmp.meters_per_cell};
         auto transformed_map = std::make_shared<UnboundedPlainGridMap>(UnboundedPlainGridMap(std::make_shared<VinyDSCell>(), gmp_mod));
         transformed_map->_origin = this->_origin+DiscretePoint2D(new_bounds.at(0), new_bounds.at(1));
@@ -358,10 +360,11 @@ public:
 //        }
         cv::Mat inversed_transform;
         cv::invertAffineTransform(transform, inversed_transform);
+		// std::cout << "inverted transform;" << std::endl;
 //        std::cout << "inversed transform:" << std::endl << inversed_transform << std::endl;
         for(pnt.y = 0; pnt.y < new_height; ++pnt.y) {
             for (pnt.x = 0; pnt.x < new_width; ++pnt.x) {
-                cv::Mat point{(double)pnt.x,(double)pnt.y,1.0};
+                cv::Mat point{(double)pnt.x,(double)pnt.y, 1.0};
                 cv::Mat base_pt = inversed_transform * point;
                 DiscretePoint2D cell_pnt(static_cast<int>(base_pt.at<double>(0)),
                                          static_cast<int>(base_pt.at<double>(1)));
@@ -369,10 +372,11 @@ public:
                 transformed_map->setCell(pnt+inv_transformed_origin, new VinyDSCell(map_value));
             }
         }
+		// std::cout << "after iterating;" << std::endl;
 //        std::cout << "new origin: " << transformed_map->origin() << std::endl;
 //        std::cout << "new sz: " << transformed_map->width() << ' ' << transformed_map->height() << std::endl;
-        changed_size = DiscretePoint2D(transformed_map->width()-gmp_mod.width_cells,
-                transformed_map->height() - gmp_mod.height_cells);
+        // changed_size = DiscretePoint2D(transformed_map->width()-gmp_mod.width_cells,
+        //         transformed_map->height() - gmp_mod.height_cells);
 //        if(changed_size.x!=0 || changed_size.y != 0){
 //            bool res = transformed_map->clear_bounds(changed_size);
 //            std::cout << "was cropped: " << res << std::endl;

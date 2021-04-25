@@ -70,6 +70,10 @@ std::vector<cv::DMatch> get_good_matches(cv::Mat &first_descriptor, cv::Mat &sec
     return good_matches;
 }
 
+double Euclid_distance(cv::Point2f &f, cv::Point2f &s){
+    return std::sqrt(std::pow(f.x-s.x,2)+std::pow(f.y-s.y,2));
+}
+
 double Euclid_distance(cv::KeyPoint &f, cv::KeyPoint &s){
     return std::sqrt(std::pow(f.pt.x-s.pt.x,2)+std::pow(f.pt.y-s.pt.y,2));
 }
