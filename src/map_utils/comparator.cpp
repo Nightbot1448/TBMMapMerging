@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
                     Parameters p(
                         dump_base + dump_files[first_map_id],
                         dump_base + dump_files[second_map_id],
-                        cof, 1.2f, sf, 1.0f, 1000+out_file_id
+                        cof, 1.2f, sf, 1.0f, out_file_id
                     );
                     OrbDescriptorsComparator comparator(p);
                     std::chrono::time_point<std::chrono::system_clock> before_comp = std::chrono::system_clock::now();
@@ -53,16 +53,6 @@ int main(int argc, char **argv) {
             }
         }
     }
-
-    
-
-    // cv::imshow("occ", second_parts_maps.at(1));
-    // cv::imshow("emp", second_parts_maps.at(2));
-    // cv::imshow("unk", second_parts_maps.at(3));
-    // cv::imshow("inv_unk", out_);
-    // cv::waitKey(0);
-
-    
 
     return 0;
 }
