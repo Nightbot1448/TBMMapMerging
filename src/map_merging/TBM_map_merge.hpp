@@ -6,7 +6,6 @@
 #include <cmath>
 #include <string>
 
-//#include "../map_utils_headers/compareParametres.h"
 #include "../map_utils_headers/compute_descriptors.h"
 
 #include "../core/maps/plain_grid_map.h"
@@ -90,7 +89,7 @@ TBM_map_merge::TBM_map_merge(const Algorithm_parameters& p) : parameters(p) {
 }
 
 void TBM_map_merge::detectAndCompute(){
-    cv::Ptr<cv::ORB> detector = cv::ORB::create( parameters.count_of_features, parameters.scale_factor );
+    cv::Ptr<cv::ORB> detector = cv::ORB::create( parameters.count_of_features, parameters.scale_factor);
 
     detector->detect(first_parts_maps.at(0), kp_first_conc);
     detector->compute(first_parts_maps.at(1), kp_first_conc, d_first_occ);
@@ -113,7 +112,9 @@ cv::Mat TBM_map_merge::get_first_transform()
         second.push_back(kp_second);
     }
     cv::Mat transform = cv::estimateAffine2D(first, second);
-    compute_average_distance(first, second, transform);
+    if (transform.dims == 2) {
+        compute_average_distance(first, second, transform);
+    }
     return transform;
 }
 

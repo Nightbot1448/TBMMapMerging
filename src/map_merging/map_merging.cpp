@@ -33,12 +33,15 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+
     Algorithm_parameters p(parser);
+
     TBM_map_merge cl(p);
 
     std::chrono::time_point<std::chrono::system_clock> before_comp = std::chrono::system_clock::now();
     auto merged_map = cl.merge();
     std::chrono::time_point<std::chrono::system_clock> after_comp = std::chrono::system_clock::now();
+    
     if (merged_map != nullptr){
         merged_map->save_state_to_file(p.merged_map);
         std::cout << "maps was merged"  << std::endl
