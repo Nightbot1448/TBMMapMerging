@@ -16,7 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   roslz4
-  pcl_ros
 )
   
 find_package( OpenCV REQUIRED )
